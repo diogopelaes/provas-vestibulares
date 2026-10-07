@@ -1,3 +1,65 @@
+# ==========================================
+# Python & Cache
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+
+# ==========================================
+# Ambientes Virtuais
+# ==========================================
+.venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
+
+# ==========================================
+# Variáveis de Ambiente e Segredos
+# ==========================================
+.env
+.env.*
+!.env.example
+
+# ==========================================
+# IDEs e Editores de Código
+# ==========================================
 .vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ==========================================
+# Assistentes de IA e Ferramentas
+# ==========================================
 .antigravityignore
 .tabignore
+.cursor/
+
+# ==========================================
+# Arquivos do Sistema (Windows / macOS)
+# ==========================================
+Thumbs.db
+ehthumbs.db
+desktop.ini
+*.ini
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ==========================================
+# Logs, Backups e Arquivos Temporários
+# ==========================================
+*.log
+*.tmp
+*.temp
+*.bak
+
+# ==========================================
+# Bancos de Dados Locais
+# ==========================================
+*.sqlite3
+*.db
