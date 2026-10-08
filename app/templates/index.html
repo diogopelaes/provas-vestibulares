@@ -3,18 +3,20 @@
 ARQUIVO: app/templates/index.html
 CAMADA: Apresentação / Frontend (HTML)
 PAPEL NO SISTEMA:
-  - Interface do usuário para envio de PDFs de provas e gabaritos.
-  - Carrega o framework CSS Pico CSS v2 (Dark Theme nativo via data-theme="dark").
-  - Estrutura do formulário:
-      * Select dinâmico para Vestibulares (AFA, IME, ITA, UNESP, UNICAMP, USP).
-      * Input numérico para o Ano do concurso.
-      * Radio buttons para seleção de 1ª Fase e 2ª Fase (com tratamento de exceção para AFA).
-      * Zonas de arrastar e soltar (drag & drop) para upload de Prova e Gabarito.
-      * Painel em tempo real ("Live Preview") exibindo a pasta de destino e nomes dos arquivos.
-      * Banner de alertas para feedback de sucesso/erro.
-RECURSOS ESTÁTICOS:
-  - Estilos customizados: /static/css/style.css
-  - Lógica do cliente:   /static/js/app.js
+  - Página única do acervo de provas ("biblioteca"):
+      * Sidebar (aside.sidebar): lista de vestibulares com contagem e estatísticas gerais.
+      * Toolbar: título do contexto atual, busca (atalho "/") e botão "Adicionar prova" (atalho "N").
+      * Filtros (#filters): chips de fase + switch "Somente com gabarito".
+      * Conteúdo (#content): grupos por fase com cards de edição (ano). Cada card tem
+        links Prova / Gabarito / Resolução que abrem o PDF em nova aba.
+  - Modal de upload (<dialog id="upload-dialog">): envia prova e/ou gabarito
+    com pré-visualização dos nomes padronizados.
+  - O conteúdo dinâmico é renderizado por static/js/library.js e static/js/upload.js.
+FRAMEWORK CSS:
+  - Pico CSS v2 (tema escuro) como base, com tokens sobrescritos em static/css/tokens.css
+    para um visual de baixo contraste.
+CACHE BUSTING:
+  - Marcadores {{v:caminho}} são substituídos pelo servidor (server.py) pelo mtime do arquivo.
 ===============================================================================
 -->
 <!DOCTYPE html>
@@ -22,165 +24,188 @@ RECURSOS ESTÁTICOS:
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Central de Armazenamento | Provas de Vestibulares</title>
-  <!-- Framework CSS: Pico CSS v2 (Dark Theme nativo - Não Bootstrap) -->
+  <meta name="description" content="Acervo local de provas e gabaritos de vestibulares (AFA, IME, ITA, UNESP, UNICAMP, USP).">
+  <meta name="color-scheme" content="dark">
+  <title>Acervo de Provas · Vestibulares</title>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2323272e'/%3E%3Cpath d='M11 8h7l4 4v12H11z' fill='none' stroke='%238fb3a6' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <!-- Framework CSS: Pico CSS v2 -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <!-- Tipografia: Inter -->
+
+  <!-- Tipografia -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Estilos customizados (com versionamento dinâmico para cache-busting) -->
-  <link rel="stylesheet" href="/static/css/style.css?v={{CSS_VERSION}}">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Estilos do projeto (ordem importa: tokens > base > layout > componentes > modal) -->
+  <link rel="stylesheet" href="/static/css/tokens.css?v={{v:css/tokens.css}}">
+  <link rel="stylesheet" href="/static/css/base.css?v={{v:css/base.css}}">
+  <link rel="stylesheet" href="/static/css/layout.css?v={{v:css/layout.css}}">
+  <link rel="stylesheet" href="/static/css/components.css?v={{v:css/components.css}}">
+  <link rel="stylesheet" href="/static/css/upload.css?v={{v:css/upload.css}}">
 </head>
 <body>
-  <main class="container">
-    <header class="page-header">
-      <div class="header-badge">Repositório de Vestibulares</div>
-      <h1>Central de Armazenamento de Provas</h1>
-      <p class="subtitle">Faça o upload da prova e do gabarito respeitando a nomenclatura oficial de cada pasta.</p>
-    </header>
+  <div class="app">
+    <!-- ============================== SIDEBAR ============================== -->
+    <aside class="sidebar" aria-label="Vestibulares">
+      <a class="brand" href="#/" aria-label="Ver todo o acervo">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M18 19v3H6.5"/><path d="M8 8h6M8 11h4"/></svg>
+        </span>
+        <span class="brand-text">
+          <span class="brand-title">Acervo de Provas</span>
+          <span class="brand-sub">Vestibulares</span>
+        </span>
+      </a>
 
-    <div class="card main-card">
-      <form id="upload-form">
-        <!-- Linha 1: Vestibular e Ano -->
-        <div class="grid">
-          <div>
-            <label for="select-vestibular">
-              <strong>Vestibular</strong>
-              <small class="label-hint">(Pastas do projeto)</small>
-            </label>
-            <select id="select-vestibular" name="vestibular" required>
-              <option value="" disabled selected>Carregando vestibulares...</option>
-            </select>
-          </div>
+      <nav class="side-section" aria-label="Lista de vestibulares">
+        <p class="side-label">Vestibulares</p>
+        <div class="side-list" id="side-list">
+          <span class="skeleton skeleton-row"></span>
+          <span class="skeleton skeleton-row"></span>
+          <span class="skeleton skeleton-row"></span>
+          <span class="skeleton skeleton-row"></span>
+          <span class="skeleton skeleton-row"></span>
+          <span class="skeleton skeleton-row"></span>
+        </div>
+      </nav>
 
-          <div>
-            <label for="input-ano">
-              <strong>Ano do Vestibular</strong>
-            </label>
-            <input 
-              type="number" 
-              id="input-ano" 
-              name="ano" 
-              min="1990" 
-              max="2050" 
-              value="2026" 
-              required 
-              placeholder="Ex: 2026"
-            >
-          </div>
+      <div class="side-stats" id="side-stats" aria-label="Resumo do acervo"></div>
+    </aside>
+
+    <!-- ============================== PRINCIPAL ============================== -->
+    <main class="main" id="main">
+      <header class="toolbar">
+        <div class="toolbar-title">
+          <p class="page-eyebrow" id="page-eyebrow">Acervo completo</p>
+          <h1 class="page-title" id="page-title">Todas as provas</h1>
+          <p class="page-sub" id="page-sub">Carregando acervo…</p>
         </div>
 
-        <!-- Linha 2: Fase -->
-        <fieldset class="phase-container" id="phase-container">
-          <legend><strong>Fase do Concurso</strong></legend>
-          <div class="phase-radios">
-            <label for="fase-1" class="phase-card">
-              <input type="radio" id="fase-1" name="fase" value="1" checked>
-              <div class="phase-content">
-                <span class="phase-title">1ª Fase</span>
-                <span class="phase-desc">Prova objetiva / primeira etapa</span>
-              </div>
-            </label>
-
-            <label for="fase-2" class="phase-card">
-              <input type="radio" id="fase-2" name="fase" value="2">
-              <div class="phase-content">
-                <span class="phase-title">2ª Fase</span>
-                <span class="phase-desc">Prova discursiva / etapa final</span>
-              </div>
-            </label>
-          </div>
-          <small id="afa-notice" class="afa-notice" style="display: none;">
-            ℹ️ O vestibular <strong>AFA</strong> utiliza fase única diretamente na raiz da pasta.
-          </small>
-        </fieldset>
-
-        <!-- Campo Especial USP (Prefixo FEVEST / FUVEST) -->
-        <div id="usp-options" class="usp-options" style="display: none;">
-          <label for="prefixo-usp">
-            <strong>Prefixo para USP (1ª Fase)</strong>
+        <div class="toolbar-actions">
+          <label class="search" for="search-input">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span class="sr-only">Buscar</span>
+            <input id="search-input" class="search-input" type="text" inputmode="search"
+                   placeholder="Buscar ano, vestibular ou fase" autocomplete="off" spellcheck="false">
+            <kbd class="search-kbd" aria-hidden="true">/</kbd>
           </label>
-          <select id="prefixo-usp">
-            <option value="FEVEST" selected>FEVEST (Padrão histórico da pasta)</option>
-            <option value="FUVEST">FUVEST (Nomenclatura oficial)</option>
-          </select>
+
+          <button class="btn btn-primary btn-add" id="btn-add" type="button" title="Adicionar prova (N)">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+            <span class="btn-label">Adicionar prova</span>
+          </button>
         </div>
+      </header>
 
-        <!-- Linha 3: Uploads Drag and Drop -->
-        <div class="grid upload-grid">
-          <!-- Upload Prova -->
-          <div class="upload-zone-wrapper">
-            <label><strong>PDF da Prova</strong></label>
-            <div class="drop-zone" id="drop-zone-prova">
-              <input type="file" id="file-prova" accept="application/pdf" class="file-input">
-              <div class="drop-zone-prompt">
-                <div class="zone-icon">📄</div>
-                <div class="zone-title">Clique ou arraste o <strong>PDF da Prova</strong></div>
-                <div class="zone-info">Apenas arquivos .pdf</div>
-              </div>
-              <div class="file-details" id="details-prova" style="display: none;">
-                <span class="file-icon">✓</span>
-                <span class="file-name" id="name-prova"></span>
-                <span class="file-size" id="size-prova"></span>
-                <button type="button" class="btn-clear" id="btn-clear-prova" title="Remover">✕</button>
-              </div>
-            </div>
-          </div>
+      <div class="filters" id="filters" role="toolbar" aria-label="Filtros"></div>
 
-          <!-- Upload Gabarito -->
-          <div class="upload-zone-wrapper">
-            <label><strong>PDF do Gabarito</strong></label>
-            <div class="drop-zone" id="drop-zone-gabarito">
-              <input type="file" id="file-gabarito" accept="application/pdf" class="file-input">
-              <div class="drop-zone-prompt">
-                <div class="zone-icon">📋</div>
-                <div class="zone-title">Clique ou arraste o <strong>PDF do Gabarito</strong></div>
-                <div class="zone-info">Apenas arquivos .pdf</div>
-              </div>
-              <div class="file-details" id="details-gabarito" style="display: none;">
-                <span class="file-icon">✓</span>
-                <span class="file-name" id="name-gabarito"></span>
-                <span class="file-size" id="size-gabarito"></span>
-                <button type="button" class="btn-clear" id="btn-clear-gabarito" title="Remover">✕</button>
-              </div>
-            </div>
-          </div>
+      <section class="content" id="content" aria-live="polite"></section>
+    </main>
+  </div>
+
+  <!-- ============================== MODAL DE UPLOAD ============================== -->
+  <dialog id="upload-dialog" class="upload-dialog" aria-labelledby="upload-title">
+    <article class="dialog-card">
+      <div class="dialog-head">
+        <div>
+          <h2 id="upload-title">Adicionar prova</h2>
+          <p>Os arquivos são renomeados automaticamente seguindo o padrão do acervo.</p>
         </div>
-
-        <!-- Live Preview da Nomenclatura -->
-        <div class="naming-preview-box">
-          <div class="preview-header">
-            <span class="preview-tag">Preview da Nomenclatura</span>
-            <small>Os arquivos serão salvos exatamente com esses nomes</small>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">📂 Pasta:</span>
-            <code id="preview-folder">IME/1ª Fase/</code>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">📄 Prova:</span>
-            <code id="preview-prova">IME_2026_1Fase.pdf</code>
-          </div>
-          <div class="preview-item">
-            <span class="preview-label">📋 Gabarito:</span>
-            <code id="preview-gabarito">IME_2026_1Fase_gab.pdf</code>
-          </div>
-        </div>
-
-        <!-- Ação Submit -->
-        <button type="submit" id="btn-submit" class="btn-submit">
-          <span class="btn-text">Salvar Arquivos no Repositório</span>
-          <span class="btn-spinner" style="display: none;"></span>
+        <button class="icon-btn" type="button" data-close aria-label="Fechar">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
         </button>
+      </div>
+
+      <form id="upload-form" class="upload-form" novalidate>
+        <div class="form-row">
+          <label class="field">
+            <span class="field-label">Vestibular</span>
+            <select id="up-vestibular" required></select>
+          </label>
+          <label class="field">
+            <span class="field-label">Ano</span>
+            <input id="up-ano" type="number" min="1990" max="2100" step="1" required>
+          </label>
+        </div>
+
+        <div class="field" id="up-fase-field">
+          <span class="field-label" id="up-fase-label">Fase</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="up-fase-label">
+            <label><input type="radio" name="fase" value="1" checked><span>1ª Fase</span></label>
+            <label><input type="radio" name="fase" value="2"><span>2ª Fase</span></label>
+          </div>
+          <p class="field-hint" id="up-afa-hint" hidden>A AFA tem etapa única — os arquivos ficam direto na pasta AFA.</p>
+        </div>
+
+        <label class="field" id="up-usp-field" hidden>
+          <span class="field-label">Prefixo do arquivo (USP · 1ª Fase)</span>
+          <select id="up-prefixo">
+            <option value="FEVEST" selected>FEVEST — padrão atual da pasta</option>
+            <option value="FUVEST">FUVEST</option>
+          </select>
+        </label>
+
+        <div class="form-row">
+          <div class="dropzone" data-kind="prova">
+            <input type="file" accept="application/pdf,.pdf" aria-label="PDF da prova">
+            <div class="dz-empty">
+              <svg class="icon dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+              <strong>Prova</strong>
+              <span>Arraste o PDF ou clique</span>
+            </div>
+            <div class="dz-file">
+              <svg class="icon dz-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span class="dz-info"><span class="dz-name"></span><span class="dz-size"></span></span>
+              <button type="button" class="icon-btn dz-clear" aria-label="Remover arquivo da prova">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="dropzone" data-kind="gabarito">
+            <input type="file" accept="application/pdf,.pdf" aria-label="PDF do gabarito">
+            <div class="dz-empty">
+              <svg class="icon dz-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="m8.5 12 2.5 2.5 4.5-5"/></svg>
+              <strong>Gabarito</strong>
+              <span>Arraste o PDF ou clique</span>
+            </div>
+            <div class="dz-file">
+              <svg class="icon dz-ok" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+              <span class="dz-info"><span class="dz-name"></span><span class="dz-size"></span></span>
+              <button type="button" class="icon-btn dz-clear" aria-label="Remover arquivo do gabarito">
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M18 6 6 18M6 6l12 12"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="preview" aria-live="polite">
+          <div class="preview-row"><span>Pasta</span><code id="pv-pasta">—</code></div>
+          <div class="preview-row"><span>Prova</span><code id="pv-prova">—</code></div>
+          <div class="preview-row"><span>Gabarito</span><code id="pv-gabarito">—</code></div>
+          <p class="preview-warn" id="pv-warn" hidden></p>
+        </div>
+
+        <div class="dialog-foot">
+          <button type="button" class="btn btn-ghost" data-close>Cancelar</button>
+          <button type="submit" class="btn btn-primary" id="up-submit">
+            <span class="spinner" aria-hidden="true"></span>
+            <span class="btn-label">Salvar no acervo</span>
+          </button>
+        </div>
       </form>
+    </article>
+  </dialog>
 
-      <!-- Mensagens de Feedback -->
-      <div id="feedback-alert" class="feedback-alert" style="display: none;"></div>
-    </div>
-  </main>
+  <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
-  <!-- Script do cliente (com versionamento dinâmico para cache-busting) -->
-  <script src="/static/js/app.js?v={{JS_VERSION}}"></script>
+  <!-- Scripts (ordem: utilitários > API > módulos > inicialização) -->
+  <script src="/static/js/ui.js?v={{v:js/ui.js}}"></script>
+  <script src="/static/js/api.js?v={{v:js/api.js}}"></script>
+  <script src="/static/js/library.js?v={{v:js/library.js}}"></script>
+  <script src="/static/js/upload.js?v={{v:js/upload.js}}"></script>
+  <script src="/static/js/main.js?v={{v:js/main.js}}"></script>
 </body>
 </html>

@@ -5,19 +5,11 @@ CAMADA: Automação / Script de Inicialização (PowerShell)
 PAPEL NO SISTEMA:
   - Inicializador completo e autônomo da aplicação local:
       1. Verifica se o ambiente virtual (.venv) existe na raiz do projeto.
-      2. Se não existir:
-         a) Procura um interpretador Python base disponível na máquina (caminhos
-            padrões, variáveis de ambiente ou diretório do usuário).
-         b) Caso nenhum Python seja detectado, avisa com destaque no terminal e
-            solicita interativamente que o usuário informe o caminho do python.exe.
-         c) Cria o ambiente virtual (.venv) na raiz do projeto.
-         d) Atualiza o pip do ambiente virtual recém-criado.
-      3. Realiza varredura de portas livres a partir da porta 8000 (testando 8001,
-         8002, etc., caso a inicial já esteja ocupada).
-      4. Abre o navegador padrão na URL correspondente (http://localhost:<porta>).
-      5. Executa o servidor HTTP (app\server.py).
-      6. Trata o encerramento com pausa final para garantir que o terminal NÃO
-         feche abruptamente quando disparado por arquivo .bat ou atalhos.
+      2. Se não existir, busca o Python base (ou solicita interativamente ao usuário),
+         cria o .venv e atualiza o pip.
+      3. Realiza varredura de portas livres a partir de 8000.
+      4. Abre um NOVO terminal independente para executar o servidor (app\server.py).
+      5. Aguarda o servidor estar pronto e abre a aplicação no navegador padrão.
 ===============================================================================
 #>
 
@@ -161,23 +153,49 @@ while ($porta -lt ($PortaInicial + 100)) {
 
 $url = "http://localhost:$porta"
 Write-Host "[Servidor] Porta disponível selecionada: $porta" -ForegroundColor Green
-Write-Host "[Navegador] Abrindo $url no navegador..." -ForegroundColor Cyan
+Write-Host "[Servidor] Abrindo nova janela de terminal para executar o servidor..." -ForegroundColor Cyan
 
 # -----------------------------------------------------------------------------
-# 3. Abrir Navegador e Executar Servidor
+# 3. Executar o Servidor em Novo Terminal e Abrir Navegador
 # -----------------------------------------------------------------------------
+$scriptBlockText = @"
+`$host.UI.RawUI.WindowTitle = 'Servidor - Provas de Vestibulares (Porta $porta)'
+Write-Host '==========================================================' -ForegroundColor Cyan
+Write-Host '      Servidor Ativo - Provas de Vestibulares            ' -ForegroundColor Cyan
+Write-Host '==========================================================' -ForegroundColor Cyan
+Write-Host 'URL Local: $url' -ForegroundColor Green
+Write-Host 'Pressione Ctrl+C para encerrar o servidor local.`n' -ForegroundColor Gray
+try {
+    & '$pythonExe' '$scriptDir\server.py' $porta
+} catch {
+    Write-Host "`n[Erro no Servidor] `$_" -ForegroundColor Red
+} finally {
+    Write-Host "`n[Servidor encerrado]" -ForegroundColor Yellow
+    Read-Host 'Pressione Enter para fechar esta janela...'
+}
+"@
+
+$bytes = [System.Text.Encoding]::Unicode.GetBytes($scriptBlockText)
+$encodedCommand = [Convert]::ToBase64String($bytes)
+
+$processInfo = Start-Process -FilePath "powershell.exe" `
+    -ArgumentList "-NoExit", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedCommand `
+    -PassThru
+
+# Aguarda o servidor iniciar e estar escutando na porta antes de abrir o navegador
+$tentativas = 0
+while ($tentativas -lt 25 -and -not (Test-PortInUse $porta)) {
+    Start-Sleep -Milliseconds 150
+    $tentativas++
+}
+
+Write-Host "[Navegador] Abrindo $url no navegador..." -ForegroundColor Cyan
 Start-Process $url
 
-Write-Host "[Execução] Servidor em execução. Pressione Ctrl+C para encerrar." -ForegroundColor Gray
-Write-Host "----------------------------------------------------------" -ForegroundColor DarkGray
+Write-Host "`n==========================================================" -ForegroundColor Green
+Write-Host "  Servidor em execução com sucesso na nova janela!        " -ForegroundColor Green
+Write-Host "  PID do processo: $($processInfo.Id)" -ForegroundColor DarkGray
+Write-Host "==========================================================" -ForegroundColor Green
+Write-Host "Para acompanhar os logs ou encerrar o servidor, utilize a nova janela aberta.`n" -ForegroundColor Gray
 
-try {
-    & $pythonExe "$scriptDir\server.py" $porta
-} catch {
-    Write-Host "`n[Erro] Erro inesperado durante a execução do servidor: $_" -ForegroundColor Red
-} finally {
-    Write-Host "`n==========================================================" -ForegroundColor Yellow
-    Write-Host " O servidor foi encerrado." -ForegroundColor Yellow
-    Write-Host "==========================================================" -ForegroundColor Yellow
-    Read-Host "Pressione Enter para fechar esta janela..."
-}
+

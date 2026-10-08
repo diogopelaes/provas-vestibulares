@@ -1,0 +1,121 @@
+/**
+ * ===============================================================================
+ * ARQUIVO: app/static/css/base.css
+ * CAMADA: Estilização / Base global
+ * PAPEL NO SISTEMA:
+ *   - Ajustes globais sobre o Pico CSS: fundo, suavização de fonte, seleção,
+ *     foco acessível, barras de rolagem discretas e utilitários (.sr-only, .icon).
+ *   - Respeita "prefers-reduced-motion" desativando animações não essenciais.
+ * ===============================================================================
+ */
+
+html {
+  color-scheme: dark;
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-feature-settings: "cv11", "ss01", "tnum" 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+::selection {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
+}
+
+/* Barras de rolagem discretas */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border: 3px solid var(--bg);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+
+/* Ícones SVG inline */
+.icon {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Acessibilidade */
+.sr-only {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+kbd {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--faint);
+  box-shadow: none;
+}
+
+code {
+  font-family: var(--mono);
+}
+
+[hidden] {
+  display: none !important;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position: 200% 0; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

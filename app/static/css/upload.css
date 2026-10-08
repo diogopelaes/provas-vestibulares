@@ -1,0 +1,233 @@
+/**
+ * ===============================================================================
+ * ARQUIVO: app/static/css/upload.css
+ * CAMADA: Estilização / Modal de upload
+ * PAPEL NO SISTEMA:
+ *   - Ajusta o <dialog> do Pico CSS (overlay com blur) para o cartão do formulário.
+ *   - Campos (.field), controle segmentado de fase (.segmented), zonas de
+ *     arrastar e soltar (.dropzone) e caixa de pré-visualização (.preview).
+ *   - Estados da dropzone: .is-dragover (arrastando) e .has-file (arquivo escolhido).
+ * ===============================================================================
+ */
+
+.upload-dialog > .dialog-card {
+  width: 100%;
+  max-width: 600px;
+  margin: 1rem;
+  padding: 0;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg);
+  animation: rise var(--normal) var(--ease) both;
+}
+
+.dialog-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.35rem 1.5rem 0;
+}
+.dialog-head h2 {
+  margin: 0;
+  font-size: 1.12rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.dialog-head p { margin: 0.25rem 0 0; font-size: 0.82rem; color: var(--muted); }
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.25rem 1.5rem 1.4rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.85rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin: 0;
+}
+.field-label {
+  font-size: 0.76rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+.field select,
+.field input[type="number"] {
+  margin: 0;
+  height: 40px;
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.88rem;
+}
+.field-hint { margin: 0.1rem 0 0; font-size: 0.76rem; color: var(--faint); }
+
+/* Controle segmentado (fase) */
+.segmented {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  padding: 3px;
+  gap: 3px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+}
+.segmented label { position: relative; margin: 0; }
+.segmented input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.segmented span {
+  display: grid;
+  place-items: center;
+  height: 32px;
+  border-radius: 6px;
+  font-size: 0.84rem;
+  color: var(--muted);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.segmented label:hover span { color: var(--text); }
+.segmented input:checked + span {
+  background: var(--surface-2);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-sm), inset 0 0 0 1px var(--border-strong);
+}
+.segmented input:focus-visible + span { outline: 2px solid var(--accent-line); }
+.segmented.is-disabled { opacity: 0.45; pointer-events: none; }
+
+/* Dropzones */
+.dropzone {
+  position: relative;
+  display: grid;
+  min-height: 118px;
+  border-radius: var(--radius);
+  border: 1px dashed var(--border-strong);
+  background: var(--bg-elev);
+  transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.dropzone:hover { border-color: var(--faint); background: var(--surface-2); }
+.dropzone.is-dragover {
+  border-color: var(--accent);
+  border-style: solid;
+  background: var(--accent-softer);
+}
+.dropzone > input[type="file"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.dropzone:focus-within { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+
+.dz-empty,
+.dz-file { grid-area: 1 / 1; }
+
+.dz-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  padding: 1rem;
+  text-align: center;
+  pointer-events: none;
+}
+.dz-empty .dz-icon { width: 22px; height: 22px; margin-bottom: 0.35rem; color: var(--faint); }
+.dz-empty strong { font-size: 0.86rem; font-weight: 500; color: var(--text); }
+.dz-empty span { font-size: 0.74rem; color: var(--faint); }
+
+.dz-file {
+  position: relative;
+  z-index: 1;
+  display: none;
+  align-items: center;
+  gap: 0.6rem;
+  margin: auto 0.75rem;
+  padding: 0.6rem 0.45rem 0.6rem 0.7rem;
+  border-radius: var(--radius-sm);
+  background: var(--accent-softer);
+  border: 1px solid var(--accent-line);
+}
+.dz-ok { width: 15px; height: 15px; color: var(--accent); }
+.dz-info { display: flex; flex-direction: column; min-width: 0; flex: 1; }
+.dz-name {
+  font-size: 0.8rem;
+  color: var(--text-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.dz-size { font-size: 0.7rem; color: var(--faint); }
+.dz-clear { width: 26px; height: 26px; }
+
+.dropzone.has-file { border-style: solid; border-color: var(--border); }
+.dropzone.has-file .dz-empty { visibility: hidden; }
+.dropzone.has-file .dz-file { display: flex; }
+.dropzone.has-file > input[type="file"] { pointer-events: none; }
+
+/* Pré-visualização dos nomes */
+.preview {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.85rem 1rem;
+  border-radius: var(--radius);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+}
+.preview-row {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.78rem;
+}
+.preview-row > span { color: var(--faint); }
+.preview-row code {
+  padding: 0;
+  background: none;
+  font-size: 0.78rem;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.preview-warn {
+  margin: 0.35rem 0 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--radius-xs);
+  background: var(--warn-soft);
+  color: var(--warn);
+  font-size: 0.76rem;
+}
+
+.dialog-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 560px) {
+  .form-row { grid-template-columns: 1fr; }
+  .upload-dialog > .dialog-card { margin: 0.5rem; }
+  .dialog-head, .upload-form { padding-left: 1.1rem; padding-right: 1.1rem; }
+}

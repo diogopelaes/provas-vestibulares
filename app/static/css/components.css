@@ -1,0 +1,438 @@
+/**
+ * ===============================================================================
+ * ARQUIVO: app/static/css/components.css
+ * CAMADA: Estilização / Componentes reutilizáveis
+ * PAPEL NO SISTEMA:
+ *   - Botões (.btn, .btn-primary, .btn-ghost, .icon-btn) — usam "all: unset" para
+ *     não herdar o estilo padrão de botões do Pico.
+ *   - Filtros: chips de fase (.chip) e switch "Somente com gabarito" (.filter-switch).
+ *   - Acervo: bloco por vestibular (.vest-block), grupo por fase (.group),
+ *     grade de cards (.exam-grid / .exam-card) e links de documentos (.doc).
+ *       * O ano no card é um link "esticado" (.stretched) — o card inteiro abre a prova;
+ *         os links de Gabarito/Resolução ficam acima dele (z-index).
+ *       * Documentos ausentes aparecem tracejados (.doc.is-missing).
+ *   - Estados: vazio (.empty), erro (.state-error), carregamento (.skeleton).
+ *   - Notificações (.toasts / .toast) e spinner de carregamento.
+ *   - A cor de cada vestibular chega via variável CSS --c (definida no JS).
+ * ===============================================================================
+ */
+
+/* ================================ BOTÕES ================================ */
+.btn {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 40px;
+  padding: 0 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  font-size: 0.86rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+.btn .icon { width: 16px; height: 16px; }
+.btn:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.btn:active { transform: translateY(1px); }
+.btn:disabled,
+.btn[aria-busy="true"] { opacity: 0.6; cursor: progress; transform: none; }
+
+.btn-primary {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+.btn-primary:hover { background: rgba(143, 179, 166, 0.16); color: var(--text-strong); }
+
+.btn-ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--muted);
+}
+.btn-ghost:hover { background: var(--surface-2); color: var(--text); border-color: var(--border-strong); }
+
+.icon-btn {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  color: var(--faint);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.icon-btn .icon { width: 16px; height: 16px; }
+.icon-btn:hover { background: var(--surface-2); color: var(--text); }
+.icon-btn:focus-visible { outline: 2px solid var(--accent-line); }
+
+.spinner {
+  display: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  animation: spin 0.7s linear infinite;
+}
+[aria-busy="true"] > .spinner { display: inline-block; }
+
+/* ================================ FILTROS ================================ */
+.filters {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  min-height: 30px;
+  margin-bottom: 2rem;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.chip {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  height: 30px;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+}
+.chip:hover { color: var(--text); border-color: var(--border-strong); }
+.chip:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 2px; }
+.chip.is-active {
+  background: var(--surface-2);
+  border-color: var(--border-strong);
+  color: var(--text-strong);
+}
+.chip-count {
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--faint);
+}
+
+.filter-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  margin: 0 0 0 auto;
+  font-size: 0.8rem;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.filter-switch input[type="checkbox"][role="switch"] {
+  margin: 0;
+  width: 2rem;
+  height: 1.15rem;
+  border-width: 2px;
+}
+
+/* ================================ ACERVO ================================ */
+.vest-block {
+  margin-bottom: 3rem;
+  animation: fade var(--normal) var(--ease) both;
+}
+
+.vest-head {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 1.25rem;
+}
+.vest-badge {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--c);
+  background: color-mix(in srgb, var(--c) 10%, transparent);
+  border: 1px solid color-mix(in srgb, var(--c) 22%, transparent);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+}
+.vest-badge:hover { background: color-mix(in srgb, var(--c) 16%, transparent); }
+.vest-name {
+  margin: 0;
+  font-size: 1.08rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--text-strong);
+}
+.vest-meta { margin: 0.1rem 0 0; font-size: 0.78rem; color: var(--faint); }
+.vest-open {
+  all: unset;
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: var(--faint);
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: var(--radius-xs);
+  transition: color var(--fast), background var(--fast);
+}
+.vest-open:hover { color: var(--text); background: var(--surface); }
+.vest-open:focus-visible { outline: 2px solid var(--accent-line); }
+
+.group { margin-bottom: 1.9rem; }
+.group:last-child { margin-bottom: 0; }
+
+.group-head {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.8rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.group-head::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+.group-count {
+  font-weight: 500;
+  letter-spacing: 0;
+  color: var(--faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.exam-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 0.7rem;
+}
+
+.exam-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  min-height: 128px;
+  padding: 0.95rem 1rem 0.9rem 1.1rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: transform var(--normal) var(--ease), border-color var(--normal) var(--ease),
+    background var(--normal) var(--ease), box-shadow var(--normal) var(--ease);
+  animation: rise 360ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 16ms);
+}
+.exam-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 16px;
+  bottom: 16px;
+  width: 2px;
+  border-radius: 0 2px 2px 0;
+  background: var(--c, var(--accent));
+  opacity: 0.45;
+  transition: opacity var(--normal), top var(--normal), bottom var(--normal);
+}
+.exam-card:hover {
+  transform: translateY(-2px);
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+}
+.exam-card:hover::before { opacity: 0.9; top: 12px; bottom: 12px; }
+.exam-card:has(.stretched:focus-visible) {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
+}
+.exam-card.is-new {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 4px var(--accent-softer), var(--shadow);
+}
+
+.exam-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.exam-year {
+  display: block;
+  font-size: 1.55rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-strong);
+  text-decoration: none;
+  word-break: break-word;
+}
+.exam-year:hover { text-decoration: none; color: var(--text-strong); }
+.exam-year--text { font-size: 1rem; letter-spacing: -0.01em; line-height: 1.25; }
+
+/* Link esticado: todo o card abre a prova */
+.stretched::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+.stretched:focus-visible { outline: none; }
+
+.exam-sub {
+  margin-top: 0.4rem;
+  font-size: 0.74rem;
+  color: var(--faint);
+}
+
+.exam-open {
+  color: var(--faint);
+  opacity: 0;
+  transform: translate(-3px, 3px);
+  transition: opacity var(--normal) var(--ease), transform var(--normal) var(--ease);
+}
+.exam-open .icon { width: 15px; height: 15px; }
+.exam-card:hover .exam-open { opacity: 1; transform: none; }
+
+.exam-actions {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.doc {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  height: 27px;
+  padding: 0 0.6rem;
+  border-radius: 7px;
+  border: 1px solid var(--border);
+  background: var(--bg-elev);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--text);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+.doc .icon { width: 13px; height: 13px; opacity: 0.65; }
+.doc:hover {
+  text-decoration: none;
+  color: var(--text-strong);
+  border-color: var(--accent-line);
+  background: var(--accent-soft);
+}
+.doc:hover .icon { opacity: 1; color: var(--accent); }
+.doc:focus-visible { outline: 2px solid var(--accent-line); outline-offset: 1px; }
+.doc.is-missing {
+  color: var(--faint);
+  background: transparent;
+  border-style: dashed;
+  cursor: default;
+}
+.doc.is-missing:hover { border-color: var(--border); background: transparent; color: var(--faint); }
+
+/* ================================ ESTADOS ================================ */
+.empty,
+.state-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.4rem;
+  padding: 4.5rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  animation: fade var(--normal) var(--ease) both;
+}
+.empty > .icon,
+.state-error > .icon {
+  width: 30px;
+  height: 30px;
+  margin-bottom: 0.6rem;
+  color: var(--faint);
+}
+.empty h3,
+.state-error h3 { margin: 0; font-size: 1rem; font-weight: 600; color: var(--text); }
+.empty p,
+.state-error p { margin: 0 0 1rem; font-size: 0.86rem; max-width: 38ch; }
+.state-error > .icon { color: var(--danger); }
+
+.skeleton {
+  display: block;
+  border-radius: var(--radius-sm);
+  background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+.skeleton-row { height: 34px; margin-bottom: 4px; }
+.skeleton-title { width: 140px; height: 12px; margin: 0 0 1rem; }
+.skeleton-card { height: 128px; border-radius: var(--radius); }
+
+/* ================================ TOASTS ================================ */
+.toasts {
+  position: fixed;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  min-width: 260px;
+  max-width: 380px;
+  padding: 0.8rem 0.95rem;
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.84rem;
+  color: var(--text);
+  pointer-events: auto;
+  animation: rise var(--normal) var(--ease) both;
+  transition: opacity var(--normal) var(--ease), transform var(--normal) var(--ease);
+}
+.toast > .icon { width: 17px; height: 17px; margin-top: 1px; color: var(--accent); }
+.toast--error > .icon { color: var(--danger); }
+.toast-body { display: flex; flex-direction: column; gap: 0.15rem; min-width: 0; }
+.toast-body strong { font-weight: 600; color: var(--text-strong); }
+.toast-body span { color: var(--muted); font-size: 0.78rem; word-break: break-word; }
+.toast.is-leaving { opacity: 0; transform: translateY(6px); }
+
+@media (max-width: 560px) {
+  .exam-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .filter-switch { margin-left: 0; width: 100%; }
+  .toasts { left: 1rem; right: 1rem; }
+  .toast { max-width: none; }
+}
