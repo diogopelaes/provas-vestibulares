@@ -8,7 +8,7 @@ PAPEL NO SISTEMA:
       2. Se não existir, busca o Python base (ou solicita interativamente ao usuário),
          cria o .venv e atualiza o pip.
       3. Realiza varredura de portas livres a partir de 8000.
-      4. Abre um NOVO terminal independente para executar o servidor (app\server.py).
+      4. Executa o servidor HTTP diretamente na janela atual.
       5. Aguarda o servidor estar pronto e abre a aplicação no navegador padrão.
 ===============================================================================
 #>
@@ -153,49 +153,50 @@ while ($porta -lt ($PortaInicial + 100)) {
 
 $url = "http://localhost:$porta"
 Write-Host "[Servidor] Porta disponível selecionada: $porta" -ForegroundColor Green
-Write-Host "[Servidor] Abrindo nova janela de terminal para executar o servidor..." -ForegroundColor Cyan
+Write-Host "[Servidor] Iniciando servidor..." -ForegroundColor Cyan
 
 # -----------------------------------------------------------------------------
-# 3. Executar o Servidor em Novo Terminal e Abrir Navegador
+# 3. Executar o Servidor na Janela Atual e Abrir Navegador
 # -----------------------------------------------------------------------------
-$scriptBlockText = @"
-`$host.UI.RawUI.WindowTitle = 'Servidor - Provas de Vestibulares (Porta $porta)'
-Write-Host '==========================================================' -ForegroundColor Cyan
-Write-Host '      Servidor Ativo - Provas de Vestibulares            ' -ForegroundColor Cyan
-Write-Host '==========================================================' -ForegroundColor Cyan
-Write-Host 'URL Local: $url' -ForegroundColor Green
-Write-Host 'Pressione Ctrl+C para encerrar o servidor local.`n' -ForegroundColor Gray
 try {
-    & '$pythonExe' '$scriptDir\server.py' $porta
-} catch {
-    Write-Host "`n[Erro no Servidor] `$_" -ForegroundColor Red
-} finally {
-    Write-Host "`n[Servidor encerrado]" -ForegroundColor Yellow
-    Read-Host 'Pressione Enter para fechar esta janela...'
-}
-"@
+    $host.UI.RawUI.WindowTitle = "Servidor - Provas de Vestibulares (Porta $porta)"
+} catch { }
 
-$bytes = [System.Text.Encoding]::Unicode.GetBytes($scriptBlockText)
-$encodedCommand = [Convert]::ToBase64String($bytes)
-
-$processInfo = Start-Process -FilePath "powershell.exe" `
-    -ArgumentList "-NoExit", "-NoProfile", "-ExecutionPolicy", "Bypass", "-EncodedCommand", $encodedCommand `
-    -PassThru
-
-# Aguarda o servidor iniciar e estar escutando na porta antes de abrir o navegador
-$tentativas = 0
-while ($tentativas -lt 25 -and -not (Test-PortInUse $porta)) {
-    Start-Sleep -Milliseconds 150
-    $tentativas++
-}
+# Dispara a abertura do navegador em segundo plano assim que o servidor estiver respondendo
+$null = Start-Job -ScriptBlock {
+    param([int]$portaAlvo, [string]$urlAlvo)
+    $tentativas = 0
+    while ($tentativas -lt 40) {
+        Start-Sleep -Milliseconds 250
+        $tentativas++
+        try {
+            $tcp = [System.Net.Sockets.TcpClient]::new()
+            $connect = $tcp.BeginConnect("127.0.0.1", $portaAlvo, $null, $null)
+            $pronto = $connect.AsyncWaitHandle.WaitOne(200)
+            if ($pronto -and $tcp.Connected) {
+                $tcp.EndConnect($connect)
+                $tcp.Close()
+                Start-Process $urlAlvo
+                break
+            }
+            $tcp.Close()
+        } catch { }
+    }
+} -ArgumentList $porta, $url
 
 Write-Host "[Navegador] Abrindo $url no navegador..." -ForegroundColor Cyan
-Start-Process $url
-
 Write-Host "`n==========================================================" -ForegroundColor Green
-Write-Host "  Servidor em execução com sucesso na nova janela!        " -ForegroundColor Green
-Write-Host "  PID do processo: $($processInfo.Id)" -ForegroundColor DarkGray
+Write-Host "      Servidor Ativo - Provas de Vestibulares            " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "Para acompanhar os logs ou encerrar o servidor, utilize a nova janela aberta.`n" -ForegroundColor Gray
+Write-Host "URL Local: $url" -ForegroundColor Green
+Write-Host "Pressione Ctrl+C para encerrar o servidor local.`n" -ForegroundColor Gray
+
+try {
+    & $pythonExe "$scriptDir\server.py" $porta
+} catch {
+    Write-Host "`n[Erro no Servidor] $_" -ForegroundColor Red
+} finally {
+    Write-Host "`n[Servidor encerrado]" -ForegroundColor Yellow
+}
 
 
