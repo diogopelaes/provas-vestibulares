@@ -1,10 +1,10 @@
 @echo off
 :: ===============================================================================
 :: ARQUIVO: app/sync.bat
-:: CAMADA: Automação / Atalho Batch para Windows
+:: CAMADA: Automacao / Atalho Batch para Windows
 :: PAPEL NO SISTEMA:
-::   - Permite acionar a sincronização diretamente a partir da pasta app/.
-::   - Delega a execução para o script central sync.bat localizado na raiz do projeto.
+::   - Permite acionar a sincronizacao diretamente a partir da pasta app/.
+::   - Delega a execucao para o script central sync.bat localizado na raiz do projeto.
 :: ===============================================================================
 
 chcp 65001 >nul
