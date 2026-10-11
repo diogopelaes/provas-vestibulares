@@ -27,7 +27,7 @@ Na pasta [`app/`](./app/) encontra-se um servidor local leve em Python com inter
 
 O projeto inclui um mecanismo de sincronização **100% automático e silencioso**:
 
-- **Via Duplo-Clique**: Dê dois cliques em [`sync.bat`](./sync.bat) na raiz do projeto (ou em [`app/sync.bat`](./app/sync.bat)). O script executa todas as etapas e fecha automaticamente ao terminar sem exigir nenhuma confirmação manual.
+- **Via Duplo-Clique**: Dê dois cliques em [`sync.bat`](./sync.bat) na raiz do projeto. O script executa todas as etapas e fecha automaticamente ao terminar sem exigir nenhuma confirmação manual.
 - **Funcionamento em Repositório Público**:
   - **Para o Proprietário/Colaborador**: Comita alterações locais, integra novidades remotas e envia (`git push`) tudo de volta ao GitHub.
   - **Para Quem Apenas Clonou (Uso Público/Sem Permissão de Escrita)**: O script baixa todas as atualizações e novas provas do repositório remoto via `git pull --rebase` e mantém o acervo local perfeitamente atualizado, sem falhar por falta de permissão de push.

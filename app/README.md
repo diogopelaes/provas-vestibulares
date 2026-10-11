@@ -14,8 +14,6 @@ A pasta `app/` é organizada seguindo a separação limpa de responsabilidades:
 ```text
 app/
 ├── server.py             # Backend: Servidor HTTP multithread, API do catálogo e uploads seguros
-├── start_app.ps1         # Script PowerShell (detecta porta livre, abre navegador e roda servidor)
-├── start_app.bat         # Launcher Batch para Windows Explorer (duplo clique)
 ├── templates/
 │   └── index.html        # Página principal da biblioteca + Modal de upload
 ├── static/
@@ -41,11 +39,11 @@ app/
 A aplicação pode ser iniciada de três formas simples:
 
 ### Opção 1: Via Duplo Clique (Recomendado no Windows)
-Dê um duplo clique no arquivo [`app/start_app.bat`](./start_app.bat). Ele cuida de criar o `.venv` caso não exista, atualizar o `pip`, verificar portas ocupadas e abrir a página no navegador.
+Dê um duplo clique no arquivo [`start_app.bat`](../start_app.bat) na raiz do projeto. Ele cuida de criar o `.venv` caso não exista, atualizar o `pip`, verificar dependências, portas ocupadas e abrir a página no navegador.
 
 ### Opção 2: Pelo Terminal PowerShell
 ```powershell
-.\app\start_app.ps1
+.\start_app.ps1
 ```
 
 ### Opção 3: Execução Manual com o Python do `.venv`
