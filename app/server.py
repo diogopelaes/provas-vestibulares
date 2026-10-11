@@ -386,7 +386,12 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
         mime_type = mimetypes.guess_type(path.name)[0] or "application/octet-stream"
         if mime_type.startswith(TEXT_MIME_PREFIXES):
             mime_type += "; charset=utf-8"
-        self._send_file(path, mime_type, "public, max-age=31536000, immutable")
+        query = urllib.parse.urlparse(self.path).query
+        if "v=" in query:
+            cache_header = "public, max-age=31536000, immutable"
+        else:
+            cache_header = "no-cache, must-revalidate"
+        self._send_file(path, mime_type, cache_header)
 
     def _serve_pdf(self, relative: str) -> None:
         path = resolve_inside(ROOT_DIR, relative)

@@ -73,7 +73,8 @@ PAPEL NO SISTEMA:
           <input
             id="query-input"
             class="search-input-hero"
-            type="search"
+            type="text"
+            inputmode="search"
             placeholder="Ex.: termodinâmica, fotossíntese, óptica, Machado de Assis, logaritmo…"
             autocomplete="off"
             spellcheck="false"
@@ -81,8 +82,7 @@ PAPEL NO SISTEMA:
             autofocus
           >
           <kbd class="search-kbd-hero" title="Pressione Enter para buscar">Enter</kbd>
-          <button type="submit" class="btn-search-hero" id="btn-submit-search">
-            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <button type="submit" class="btn btn-primary btn-search-hero" id="btn-submit-search">
             <span>Buscar</span>
           </button>
         </div>
@@ -168,7 +168,7 @@ PAPEL NO SISTEMA:
               <span>Provas</span>
             </label>
             <label class="custom-toggle">
-              <input type="checkbox" id="chk-tipo-gabarito" checked>
+              <input type="checkbox" id="chk-tipo-gabarito">
               <span>Gabaritos</span>
             </label>
             <label class="custom-toggle">
@@ -219,16 +219,6 @@ PAPEL NO SISTEMA:
         <p class="empty-desc">
           Digite qualquer palavra ou conceito cobrado nos vestibulares. O motor busca página a página e gera links diretos para cada ocorrência.
         </p>
-        <div class="sample-queries">
-          <span style="font-size: 0.8rem; color: var(--muted); align-self: center; margin-right: 0.2rem;">Sugestões rápidas:</span>
-          <button type="button" class="sample-chip">termodinâmica</button>
-          <button type="button" class="sample-chip">fotossíntese</button>
-          <button type="button" class="sample-chip">óptica geométrica</button>
-          <button type="button" class="sample-chip">eletroquímica</button>
-          <button type="button" class="sample-chip">Machado de Assis</button>
-          <button type="button" class="sample-chip">logaritmo</button>
-          <button type="button" class="sample-chip">segunda lei de Newton</button>
-        </div>
       </div>
     </section>
 

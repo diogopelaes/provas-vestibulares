@@ -97,81 +97,134 @@
   line-height: 1.5;
 }
 
+.search-form {
+  max-width: 840px;
+  margin: 0 auto;
+  width: 100%;
+}
+
 .search-main-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   background: var(--surface);
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-lg);
-  padding: 0.5rem;
+  padding: 0.35rem 0.45rem 0.35rem 1.1rem;
   box-shadow: var(--shadow);
-  display: flex;
-  align-items: center;
-  gap: 0.6rem;
-  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+  min-height: 56px;
+  box-sizing: border-box;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease), background var(--fast) var(--ease);
 }
 
 .search-main-box:focus-within {
   border-color: var(--accent-line);
+  background: var(--surface-2);
   box-shadow: 0 0 0 3px var(--accent-softer), var(--shadow);
 }
 
 .search-icon-hero {
   color: var(--muted);
-  width: 22px;
-  height: 22px;
-  margin-left: 0.85rem;
+  width: 20px;
+  height: 20px;
+  margin: 0;
   flex-shrink: 0;
+  transition: color var(--fast) var(--ease);
+}
+
+.search-main-box:focus-within .search-icon-hero {
+  color: var(--accent);
 }
 
 .search-input-hero {
-  all: unset;
-  flex: 1;
-  font-size: 1.15rem;
-  color: var(--text-strong);
-  padding: 0.5rem 0.25rem;
+  appearance: none;
+  -webkit-appearance: none;
+  flex: 1 1 auto;
   min-width: 0;
+  width: 100%;
+  height: 44px;
+  margin: 0 !important;
+  padding: 0 0.4rem !important;
+  background: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  outline: none !important;
+  font-family: inherit;
+  font-size: 1.05rem;
+  font-weight: 400;
+  color: var(--text-strong);
+  box-sizing: border-box;
 }
 
 .search-input-hero::placeholder {
   color: var(--faint);
+  font-size: 0.95rem;
+}
+
+.search-input-hero::-webkit-search-decoration,
+.search-input-hero::-webkit-search-cancel-button,
+.search-input-hero::-webkit-search-results-button,
+.search-input-hero::-webkit-search-results-decoration {
+  display: none;
+  -webkit-appearance: none;
 }
 
 .search-kbd-hero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  height: 26px;
+  padding: 0 0.55rem;
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--muted);
-  font-size: 0.75rem;
+  font-size: 0.74rem;
   font-family: var(--mono);
-  padding: 0.25rem 0.55rem;
   border-radius: var(--radius-xs);
   user-select: none;
+  pointer-events: none;
 }
 
 .btn-search-hero {
-  background: var(--accent);
-  color: #121517 !important;
-  font-weight: 600 !important;
-  padding: 0 1.5rem !important;
-  height: 46px !important;
-  border-radius: var(--radius) !important;
-  border: none !important;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
+  all: unset;
+  box-sizing: border-box;
+  flex-shrink: 0 !important;
+  width: auto !important;
+  height: 44px !important;
+  margin: 0 !important;
+  padding: 0 1.4rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
   gap: 0.5rem;
-  transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease);
+  border-radius: var(--radius-sm) !important;
+  border: 1px solid var(--accent-line) !important;
+  background: var(--accent-soft) !important;
+  color: var(--accent) !important;
+  font-size: 0.92rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+  user-select: none;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease),
+    border-color var(--fast) var(--ease), transform var(--fast) var(--ease);
 }
 
 .btn-search-hero:hover {
-  filter: brightness(1.08);
+  background: rgba(143, 179, 166, 0.22) !important;
+  border-color: var(--accent) !important;
+  color: var(--text-strong) !important;
+}
+
+.btn-search-hero:focus-visible {
+  outline: 2px solid var(--accent-line);
+  outline-offset: 2px;
 }
 
 .btn-search-hero:active {
   transform: translateY(1px);
-}
-
-.btn-search-hero .icon {
-  width: 18px;
-  height: 18px;
 }
 
 /* =============================== PAINEL DE FILTROS =============================== */
@@ -738,12 +791,15 @@
   .search-hero-title {
     font-size: 1.6rem;
   }
+  .search-kbd-hero {
+    display: none;
+  }
   .search-main-box {
-    flex-wrap: wrap;
+    padding-left: 0.85rem;
+    gap: 0.5rem;
   }
   .btn-search-hero {
-    width: 100%;
-    justify-content: center;
+    padding: 0 1rem !important;
   }
   .search-status-bar {
     flex-direction: column;
