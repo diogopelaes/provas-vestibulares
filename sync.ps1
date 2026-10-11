@@ -18,8 +18,8 @@ PAPEL NO SISTEMA:
 
 [CmdletBinding()]
 param (
-    [Parameter(Position = 0)]
-    [string]$Mensagem = "",
+    [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
+    [string[]]$Mensagem,
 
     [Parameter()]
     [string]$Remote = "origin",
@@ -27,6 +27,7 @@ param (
     [Parameter()]
     [switch]$NaoPausar
 )
+
 
 # Configuração de codificação para evitar problemas com acentuação e caracteres especiais
 $OutputEncoding = [System.Text.UTF8Encoding]::new()
@@ -105,9 +106,10 @@ if ($statusLines) {
         Write-Host "    $line" -ForegroundColor Gray
     }
 
-    if ([string]::IsNullOrWhiteSpace($Mensagem)) {
+    $mensagemFinal = if ($Mensagem -and $Mensagem.Count -gt 0) { ($Mensagem -join " ").Trim().Trim('"').Trim("'") } else { "" }
+    if ([string]::IsNullOrWhiteSpace($mensagemFinal)) {
         $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-        $Mensagem = "sync: sincronização automática do acervo ($timestamp)"
+        $mensagemFinal = "sync: sincronização automática do acervo ($timestamp)"
     }
 
     Write-Host "`n -> Adicionando arquivos modificados/novos (git add -A)..." -ForegroundColor DarkCyan
@@ -118,8 +120,8 @@ if ($statusLines) {
         exit 1
     }
 
-    Write-Host " -> Criando commit local: '$Mensagem'..." -ForegroundColor DarkCyan
-    & git commit -m "$Mensagem"
+    Write-Host " -> Criando commit local: '$mensagemFinal'..." -ForegroundColor DarkCyan
+    & git commit -m "$mensagemFinal"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERRO] Falha ao realizar commit das alterações locais." -ForegroundColor Red
         if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }

@@ -20,3 +20,22 @@ O repositório reúne arquivos em formato PDF organizados por instituição e et
 ## 🛠️ Aplicação de Suporte (`app/`)
 
 Na pasta [`app/`](./app/) encontra-se um servidor local leve em Python com interface web, cujo propósito é agilizar o salvamento de novos arquivos mantendo automaticamente o padrão de nomenclatura de cada pasta.
+
+---
+
+## 🔄 Sincronização com o Repositório Remoto (`sync.bat`)
+
+Para sincronizar facilmente todas as adições de provas e atualizações da aplicação com o repositório remoto no GitHub:
+
+- **Via Duplo-Clique**: Execute [`sync.bat`](./sync.bat) na raiz do projeto (ou [`app/sync.bat`](./app/sync.bat)).
+- **Via PowerShell**:
+  ```powershell
+  .\sync.ps1
+  ```
+  Ou especificando uma mensagem de commit personalizada:
+  ```powershell
+  .\sync.ps1 -Mensagem "feat: adiciona provas UNESP 2026"
+  ```
+
+O script detecta arquivos modificados/novos, gera o commit, busca novidades com `git fetch`, integra alterações remotas com `git pull --rebase` e envia tudo com `git push`.
+

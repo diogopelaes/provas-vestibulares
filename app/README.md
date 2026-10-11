@@ -57,6 +57,12 @@ Acesse no navegador: **[http://localhost:8000](http://localhost:8000)**
 
 ---
 
+## 🔄 Sincronização do Acervo (`sync.bat`)
+
+Após cadastrar novas provas ou fazer alterações, você pode sincronizar tudo com o GitHub executando [`app/sync.bat`](./sync.bat) com duplo clique ou pela raiz do projeto com [`..\sync.bat`](../sync.bat).
+
+---
+
 ## ⌨️ Atalhos de Teclado
 
 - `/` ou `Ctrl+K`: Foca diretamente na barra de busca.
