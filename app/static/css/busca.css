@@ -1,0 +1,760 @@
+/**
+ * ===============================================================================
+ * ARQUIVO: app/static/css/busca.css
+ * CAMADA: Estilização / Interface de Busca Avançada
+ * PAPEL NO SISTEMA:
+ *   - Estilos dedicados da página de busca avançada no acervo (busca.html).
+ *   - Harmonizado com a paleta de baixo contraste (tokens.css) e Pico CSS v2.
+ *   - Componentes:
+ *       * Hero de busca com caixa de entrada de alto destaque e atalhos de teclado.
+ *       * Painel de filtros retrátil com chips interativos de vestibulares e anos.
+ *       * Modos de pesquisa da língua portuguesa (acentuação flexível, exata/todas).
+ *       * Métricas da busca (tempo de resposta em ms, ocorrências, total de provas).
+ *       * Cards de resultados com destaque (<mark>) nos trechos e link direto para a página.
+ * ===============================================================================
+ */
+
+/* =============================== HEADER / NAV =============================== */
+.search-header {
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elev);
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  backdrop-filter: blur(12px);
+}
+
+.search-nav {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0.85rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.search-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  color: var(--text-strong);
+}
+
+.search-brand:hover {
+  text-decoration: none;
+  color: var(--text-strong);
+}
+
+.search-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border: 1px solid var(--accent-line);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.76rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+/* =============================== LAYOUT PRINCIPAL =============================== */
+.search-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+/* =============================== HERO DE BUSCA =============================== */
+.search-hero {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.search-hero-title {
+  font-size: 2.1rem;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  color: var(--text-strong);
+  margin-bottom: 0.4rem;
+}
+
+.search-hero-sub {
+  color: var(--muted);
+  font-size: 1rem;
+  max-width: 680px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.5;
+}
+
+.search-main-box {
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 0.5rem;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.search-main-box:focus-within {
+  border-color: var(--accent-line);
+  box-shadow: 0 0 0 3px var(--accent-softer), var(--shadow);
+}
+
+.search-icon-hero {
+  color: var(--muted);
+  width: 22px;
+  height: 22px;
+  margin-left: 0.85rem;
+  flex-shrink: 0;
+}
+
+.search-input-hero {
+  all: unset;
+  flex: 1;
+  font-size: 1.15rem;
+  color: var(--text-strong);
+  padding: 0.5rem 0.25rem;
+  min-width: 0;
+}
+
+.search-input-hero::placeholder {
+  color: var(--faint);
+}
+
+.search-kbd-hero {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-size: 0.75rem;
+  font-family: var(--mono);
+  padding: 0.25rem 0.55rem;
+  border-radius: var(--radius-xs);
+  user-select: none;
+}
+
+.btn-search-hero {
+  background: var(--accent);
+  color: #121517 !important;
+  font-weight: 600 !important;
+  padding: 0 1.5rem !important;
+  height: 46px !important;
+  border-radius: var(--radius) !important;
+  border: none !important;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  transition: transform var(--fast) var(--ease), filter var(--fast) var(--ease);
+}
+
+.btn-search-hero:hover {
+  filter: brightness(1.08);
+}
+
+.btn-search-hero:active {
+  transform: translateY(1px);
+}
+
+.btn-search-hero .icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* =============================== PAINEL DE FILTROS =============================== */
+.filters-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.filter-section {
+  margin-bottom: 1.25rem;
+}
+
+.filter-section:last-child {
+  margin-bottom: 0;
+}
+
+.filter-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.65rem;
+}
+
+.filter-title {
+  font-size: 0.82rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin: 0;
+}
+
+.filter-quick-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.filter-action-link {
+  all: unset;
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--accent);
+  padding: 0.1rem 0.4rem;
+  border-radius: var(--radius-xs);
+}
+
+.filter-action-link:hover {
+  background: var(--accent-softer);
+  text-decoration: underline;
+}
+
+/* Chips de Vestibulares */
+.chips-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.vest-chip {
+  all: unset;
+  cursor: pointer;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.8rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text);
+  user-select: none;
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.vest-chip:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-strong);
+  color: var(--text-strong);
+}
+
+.vest-chip.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+}
+
+.vest-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+  flex-shrink: 0;
+}
+
+.vest-count {
+  font-size: 0.74rem;
+  color: var(--faint);
+  font-family: var(--mono);
+}
+
+.vest-chip.is-active .vest-count {
+  color: var(--accent);
+  opacity: 0.8;
+}
+
+/* Seletor de Anos */
+.years-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.years-presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.preset-chip {
+  all: unset;
+  cursor: pointer;
+  padding: 0.25rem 0.65rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-size: 0.78rem;
+  color: var(--muted);
+  transition: all var(--fast) var(--ease);
+}
+
+.preset-chip:hover {
+  border-color: var(--border-strong);
+  color: var(--text);
+}
+
+.preset-chip.is-active {
+  background: var(--surface-hover);
+  border-color: var(--accent-line);
+  color: var(--accent);
+  font-weight: 500;
+}
+
+.years-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  max-height: 140px;
+  overflow-y: auto;
+  padding: 0.25rem 0;
+}
+
+.year-chip {
+  all: unset;
+  cursor: pointer;
+  padding: 0.25rem 0.55rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  color: var(--muted);
+  user-select: none;
+  transition: all var(--fast) var(--ease);
+}
+
+.year-chip:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.year-chip.is-active {
+  background: var(--accent-soft);
+  border-color: var(--accent-line);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+/* Opções de Idioma Português e Modo de Busca */
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.2rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.option-group-title {
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
+  margin-bottom: 0.5rem;
+}
+
+.mode-segmented {
+  display: flex;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 3px;
+  gap: 3px;
+}
+
+.mode-segmented label {
+  flex: 1;
+  text-align: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+.mode-segmented input {
+  display: none;
+}
+
+.mode-segmented span {
+  display: block;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.8rem;
+  border-radius: var(--radius-xs);
+  color: var(--muted);
+  user-select: none;
+  transition: all var(--fast) var(--ease);
+}
+
+.mode-segmented input:checked + span {
+  background: var(--surface-hover);
+  color: var(--text-strong);
+  font-weight: 500;
+  box-shadow: var(--shadow-sm);
+}
+
+.toggles-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.custom-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 0.84rem;
+  color: var(--text);
+  cursor: pointer;
+  user-select: none;
+  margin: 0;
+}
+
+.custom-toggle input {
+  margin: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+}
+
+.custom-toggle .toggle-hint {
+  font-size: 0.74rem;
+  color: var(--muted);
+  display: block;
+}
+
+/* =============================== BARRA DE STATUS / RESUMO =============================== */
+.search-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 1.5rem;
+  font-size: 0.86rem;
+  color: var(--muted);
+}
+
+.search-status-stats strong {
+  color: var(--text-strong);
+}
+
+.search-status-time {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  color: var(--accent);
+  background: var(--accent-softer);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-xs);
+}
+
+/* Tags de distribuição por vestibular nos resultados */
+.search-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 1.5rem;
+}
+
+.breakdown-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.6rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  font-size: 0.76rem;
+  color: var(--text);
+}
+
+.breakdown-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--c, var(--accent));
+}
+
+.breakdown-badge {
+  background: var(--surface-2);
+  color: var(--accent);
+  font-family: var(--mono);
+  padding: 0 0.35rem;
+  border-radius: 3px;
+  font-size: 0.72rem;
+}
+
+/* =============================== CARDS DE RESULTADOS =============================== */
+.results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.result-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+  position: relative;
+}
+
+.result-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+.result-badges {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.badge-vest {
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-line);
+  color: var(--accent);
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+.badge-ano {
+  font-family: var(--mono);
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--text-strong);
+}
+
+.badge-tipo {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-xs);
+  font-size: 0.72rem;
+  text-transform: capitalize;
+}
+
+.badge-fase {
+  color: var(--faint);
+  font-size: 0.75rem;
+}
+
+.badge-page {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: rgba(143, 179, 166, 0.12);
+  color: var(--accent);
+  border: 1px solid var(--accent-line);
+  padding: 0.25rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+/* Snippets / Trechos */
+.result-snippets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin-bottom: 1.1rem;
+}
+
+.snippet-box {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--radius-xs);
+  padding: 0.75rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.6;
+  color: var(--text);
+  word-break: break-word;
+}
+
+/* Destaque com tag <mark> */
+.snippet-box mark {
+  background: rgba(143, 179, 166, 0.28);
+  color: #ffffff;
+  font-weight: 600;
+  border-bottom: 2px solid var(--accent);
+  padding: 0.08em 0.35em;
+  border-radius: 3px;
+  box-shadow: 0 0 8px rgba(143, 179, 166, 0.3);
+}
+
+/* Rodapé do Card com Ações */
+.result-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.result-file-info {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--faint);
+  font-size: 0.78rem;
+  font-family: var(--mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 480px;
+}
+
+.result-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.btn-open-pdf {
+  all: unset;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--accent);
+  color: #121517 !important;
+  font-weight: 600 !important;
+  padding: 0.4rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.82rem;
+  text-decoration: none !important;
+  transition: filter var(--fast) var(--ease), transform var(--fast) var(--ease);
+}
+
+.btn-open-pdf:hover {
+  filter: brightness(1.1);
+  color: #121517 !important;
+}
+
+.btn-open-pdf:active {
+  transform: translateY(1px);
+}
+
+/* =============================== ESTADOS VAZIOS / DICAS =============================== */
+.search-empty-state {
+  text-align: center;
+  padding: 3.5rem 1.5rem;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius);
+}
+
+.empty-icon {
+  width: 44px;
+  height: 44px;
+  color: var(--muted);
+  margin-bottom: 1rem;
+}
+
+.empty-title {
+  font-size: 1.15rem;
+  color: var(--text-strong);
+  margin-bottom: 0.4rem;
+}
+
+.empty-desc {
+  color: var(--muted);
+  font-size: 0.9rem;
+  max-width: 520px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.5;
+}
+
+.sample-queries {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.sample-chip {
+  all: unset;
+  cursor: pointer;
+  padding: 0.3rem 0.75rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--accent);
+  font-size: 0.8rem;
+  transition: all var(--fast) var(--ease);
+}
+
+.sample-chip:hover {
+  background: var(--accent-softer);
+  border-color: var(--accent-line);
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+  .search-container {
+    padding: 1.25rem 1rem 3rem;
+  }
+  .search-hero-title {
+    font-size: 1.6rem;
+  }
+  .search-main-box {
+    flex-wrap: wrap;
+  }
+  .btn-search-hero {
+    width: 100%;
+    justify-content: center;
+  }
+  .search-status-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .result-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .result-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

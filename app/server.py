@@ -46,6 +46,16 @@ import urllib.parse
 from pathlib import Path
 from typing import Any
 
+try:
+    from busca import buscar, get_opcoes_busca, sync_index
+except ImportError:
+    try:
+        from app.busca import buscar, get_opcoes_busca, sync_index
+    except ImportError:
+        buscar = None
+        get_opcoes_busca = None
+        sync_index = None
+
 logging.basicConfig(
     level=logging.INFO,
     format="[%(asctime)s] %(levelname)s - %(message)s",
@@ -360,6 +370,14 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
             return
         self._send_bytes(payload, "text/html; charset=utf-8", "no-cache, no-store, must-revalidate")
 
+    def _serve_busca(self) -> None:
+        try:
+            payload = render_template("busca.html")
+        except OSError:
+            self.send_error(404, "Template busca.html não encontrado.")
+            return
+        self._send_bytes(payload, "text/html; charset=utf-8", "no-cache, no-store, must-revalidate")
+
     def _serve_static(self, relative: str) -> None:
         path = resolve_inside(STATIC_DIR, relative)
         if path is None:
@@ -386,6 +404,8 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
 
         if path in ("/", "/index.html"):
             self._serve_index()
+        elif path in ("/busca", "/busca.html"):
+            self._serve_busca()
         elif path.startswith("/static/"):
             self._serve_static(path.removeprefix("/static/"))
         elif path.startswith("/arquivos/"):
@@ -394,6 +414,13 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json(200, build_catalog())
         elif path == "/api/vestibulares":
             self._send_json(200, {"vestibulares": get_vestibulares()})
+        elif path == "/api/busca/opcoes":
+            if get_opcoes_busca is None:
+                self._send_json(500, {"error": "Módulo de busca não disponível."})
+            else:
+                self._send_json(200, get_opcoes_busca(ROOT_DIR))
+        elif path == "/api/busca":
+            self._handle_busca_get()
         else:
             self.send_error(404, "Página ou recurso não encontrado.")
 
@@ -412,10 +439,46 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_preview(data)
         elif path == "/api/upload":
             self._handle_upload(data)
+        elif path == "/api/busca":
+            self._handle_busca_post(data)
         else:
             self._send_json(404, {"error": "Endpoint não encontrado."})
 
     # ---------------------------------------------------------------- handlers
+    def _handle_busca_get(self) -> None:
+        if buscar is None:
+            self._send_json(500, {"error": "Módulo de busca indisponível."})
+            return
+        parsed_url = urllib.parse.urlparse(self.path)
+        query_params = urllib.parse.parse_qs(parsed_url.query)
+        termo = query_params.get("termo", [""])[0]
+        vestibulares = query_params.get("vestibulares", [])
+        anos = [int(a) for a in query_params.get("anos", []) if a.isdigit()]
+        tipos = query_params.get("tipos", [])
+        modo = query_params.get("modo", ["exata"])[0]
+        sensivel_acentos = query_params.get("sensivel_acentos", ["false"])[0].lower() in ("true", "1")
+        sensivel_maiusculas = query_params.get("sensivel_maiusculas", ["false"])[0].lower() in ("true", "1")
+        resultado = buscar(
+            termo,
+            {
+                "vestibulares": vestibulares,
+                "anos": anos,
+                "tipos": tipos,
+                "modo": modo,
+                "sensivel_acentos": sensivel_acentos,
+                "sensivel_maiusculas": sensivel_maiusculas,
+            },
+            root_dir=ROOT_DIR,
+        )
+        self._send_json(200, resultado)
+
+    def _handle_busca_post(self, data: dict[str, Any]) -> None:
+        if buscar is None:
+            self._send_json(500, {"error": "Módulo de busca indisponível."})
+            return
+        termo = str(data.get("termo", "")).strip()
+        resultado = buscar(termo, data, root_dir=ROOT_DIR)
+        self._send_json(200, resultado)
     def _handle_preview(self, data: dict[str, Any]) -> None:
         try:
             vestibular, ano, fase, prefixo_usp = validate_upload_params(data)

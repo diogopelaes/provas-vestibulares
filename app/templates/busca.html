@@ -1,0 +1,244 @@
+<!--
+===============================================================================
+ARQUIVO: app/templates/busca.html
+CAMADA: Apresentação / Frontend (HTML)
+PAPEL NO SISTEMA:
+  - Página de Busca Avançada no Conteúdo dos PDFs:
+      * Permite selecionar múltiplos vestibulares e anos.
+      * Busca textual em português (insensível a acentos e maiúsculas por padrão).
+      * Modos de pesquisa: Frase exata, Todas as palavras, Qualquer palavra.
+      * Exibe trechos com <mark> e links que abrem o PDF na página exata (#page=N).
+===============================================================================
+-->
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Busca avançada de termos nos PDFs de provas e gabaritos dos principais vestibulares (USP, UNICAMP, UNESP, ITA, IME, AFA, ENEM).">
+  <meta name="color-scheme" content="dark">
+  <title>Busca Avançada no Conteúdo · Vestibulares</title>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2323272e'/%3E%3Ccircle cx='13' cy='13' r='5' fill='none' stroke='%238fb3a6' stroke-width='2'/%3E%3Cpath d='m17 17 4 4' stroke='%238fb3a6' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E">
+
+  <!-- Framework CSS: Pico CSS v2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+
+  <!-- Tipografia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Estilos do projeto -->
+  <link rel="stylesheet" href="/static/css/tokens.css?v={{v:css/tokens.css}}">
+  <link rel="stylesheet" href="/static/css/base.css?v={{v:css/base.css}}">
+  <link rel="stylesheet" href="/static/css/components.css?v={{v:css/components.css}}">
+  <link rel="stylesheet" href="/static/css/busca.css?v={{v:css/busca.css}}">
+</head>
+<body>
+
+  <!-- ============================== TOPO / NAVEGAÇÃO ============================== -->
+  <header class="search-header">
+    <nav class="search-nav">
+      <a href="/" class="search-brand" aria-label="Ir para a biblioteca do acervo">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" width="20" height="20"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M18 19v3H6.5"/><path d="M8 8h6M8 11h4"/></svg>
+        </span>
+        <span style="font-weight: 600; font-size: 0.95rem;">Acervo de Vestibulares</span>
+        <span class="search-badge">Busca nos PDFs</span>
+      </a>
+
+      <div class="nav-links">
+        <a href="/" class="btn btn-ghost" title="Voltar à biblioteca de provas">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg>
+          <span>Biblioteca de Provas</span>
+        </a>
+      </div>
+    </nav>
+  </header>
+
+  <!-- ============================== CONTEÚDO PRINCIPAL ============================== -->
+  <main class="search-container">
+    
+    <!-- Hero / Campo Central de Busca -->
+    <section class="search-hero">
+      <h1 class="search-hero-title">Busca Avançada no Conteúdo</h1>
+      <p class="search-hero-sub">
+        Pesquise palavras, expressões e conceitos em português dentro do texto de mais de 400 provas e gabaritos.
+      </p>
+
+      <form id="search-form" class="search-form" novalidate>
+        <div class="search-main-box">
+          <svg class="search-icon-hero" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input
+            id="query-input"
+            class="search-input-hero"
+            type="search"
+            placeholder="Ex.: termodinâmica, fotossíntese, óptica, Machado de Assis, logaritmo…"
+            autocomplete="off"
+            spellcheck="false"
+            required
+            autofocus
+          >
+          <kbd class="search-kbd-hero" title="Pressione Enter para buscar">Enter</kbd>
+          <button type="submit" class="btn-search-hero" id="btn-submit-search">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <span>Buscar</span>
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Painel de Filtros e Opções -->
+    <section class="filters-card" aria-label="Filtros de pesquisa">
+      
+      <!-- Vestibulares -->
+      <div class="filter-section">
+        <div class="filter-header-row">
+          <h2 class="filter-title">Vestibulares</h2>
+          <div class="filter-quick-actions">
+            <button type="button" class="filter-action-link" id="btn-vest-all">Selecionar todos</button>
+            <span>·</span>
+            <button type="button" class="filter-action-link" id="btn-vest-none">Limpar</button>
+          </div>
+        </div>
+        <div class="chips-grid" id="vest-chips">
+          <!-- Injetado dinamicamente pelo busca.js -->
+          <span class="skeleton skeleton-row" style="width: 80px; height: 32px;"></span>
+          <span class="skeleton skeleton-row" style="width: 80px; height: 32px;"></span>
+          <span class="skeleton skeleton-row" style="width: 80px; height: 32px;"></span>
+        </div>
+      </div>
+
+      <!-- Anos -->
+      <div class="filter-section">
+        <div class="filter-header-row">
+          <h2 class="filter-title">Anos das Provas</h2>
+          <div class="filter-quick-actions">
+            <button type="button" class="filter-action-link" id="btn-years-all">Todos os anos</button>
+            <span>·</span>
+            <button type="button" class="filter-action-link" id="btn-years-none">Limpar</button>
+          </div>
+        </div>
+        
+        <div class="years-row">
+          <div class="years-presets" id="years-presets">
+            <button type="button" class="preset-chip is-active" data-preset="all">Todos</button>
+            <button type="button" class="preset-chip" data-preset="last3">Últimos 3 anos</button>
+            <button type="button" class="preset-chip" data-preset="last5">Últimos 5 anos</button>
+            <button type="button" class="preset-chip" data-preset="last10">Últimos 10 anos</button>
+            <button type="button" class="preset-chip" data-preset="2020s">2020 a 2026</button>
+            <button type="button" class="preset-chip" data-preset="2010s">2010 a 2019</button>
+            <button type="button" class="preset-chip" data-preset="pre2010">Anteriores a 2010</button>
+          </div>
+          
+          <div class="years-grid" id="years-grid">
+            <!-- Anos injetados dinamicamente -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Tipo de Documento & Modos em Português -->
+      <div class="options-grid">
+        <!-- Modo do Termo -->
+        <div>
+          <h3 class="option-group-title">Modo de Combinação</h3>
+          <div class="mode-segmented" role="radiogroup">
+            <label>
+              <input type="radio" name="search-mode" value="exata" checked>
+              <span>Frase exata</span>
+            </label>
+            <label>
+              <input type="radio" name="search-mode" value="todas">
+              <span>Todas as palavras</span>
+            </label>
+            <label>
+              <input type="radio" name="search-mode" value="qualquer">
+              <span>Qualquer palavra</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Tipo de Arquivo -->
+        <div>
+          <h3 class="option-group-title">Tipo de Arquivo</h3>
+          <div class="toggles-list" style="flex-direction: row; gap: 1rem; align-items: center; padding-top: 0.3rem;">
+            <label class="custom-toggle">
+              <input type="checkbox" id="chk-tipo-prova" checked>
+              <span>Provas</span>
+            </label>
+            <label class="custom-toggle">
+              <input type="checkbox" id="chk-tipo-gabarito" checked>
+              <span>Gabaritos</span>
+            </label>
+            <label class="custom-toggle">
+              <input type="checkbox" id="chk-tipo-resol">
+              <span>Resoluções</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Sensibilidade Língua Portuguesa -->
+        <div>
+          <h3 class="option-group-title">Ortografia em Português</h3>
+          <div class="toggles-list">
+            <label class="custom-toggle" title="Ao marcar, 'quimica' encontra 'química', 'optica' encontra 'óptica', etc.">
+              <input type="checkbox" id="chk-ignore-accents" checked>
+              <div>
+                <span>Busca flexível de acentos</span>
+                <span class="toggle-hint">Ignora acentos gráficos e cedilha</span>
+              </div>
+            </label>
+            <label class="custom-toggle" title="Diferencia letras maiúsculas de minúsculas">
+              <input type="checkbox" id="chk-case-sensitive">
+              <div>
+                <span>Diferenciar maiúsculas/minúsculas</span>
+              </div>
+            </label>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Resumo dos Resultados / Barra de Status -->
+    <div id="status-bar" class="search-status-bar" hidden aria-live="polite">
+      <div class="search-status-stats" id="status-text"></div>
+      <div class="search-status-time" id="status-time"></div>
+    </div>
+
+    <!-- Pílulas de Distribuição por Vestibular -->
+    <div id="vest-breakdown" class="search-breakdown" hidden></div>
+
+    <!-- Lista de Resultados -->
+    <section id="results-container" class="results-list" aria-live="polite">
+      <!-- Estado Inicial -->
+      <div class="search-empty-state" id="initial-state">
+        <svg class="empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/><path d="M11 8v6M8 11h6"/></svg>
+        <h3 class="empty-title">Pronto para pesquisar</h3>
+        <p class="empty-desc">
+          Digite qualquer palavra ou conceito cobrado nos vestibulares. O motor busca página a página e gera links diretos para cada ocorrência.
+        </p>
+        <div class="sample-queries">
+          <span style="font-size: 0.8rem; color: var(--muted); align-self: center; margin-right: 0.2rem;">Sugestões rápidas:</span>
+          <button type="button" class="sample-chip">termodinâmica</button>
+          <button type="button" class="sample-chip">fotossíntese</button>
+          <button type="button" class="sample-chip">óptica geométrica</button>
+          <button type="button" class="sample-chip">eletroquímica</button>
+          <button type="button" class="sample-chip">Machado de Assis</button>
+          <button type="button" class="sample-chip">logaritmo</button>
+          <button type="button" class="sample-chip">segunda lei de Newton</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <!-- Scripts -->
+  <script src="/static/js/ui.js?v={{v:js/ui.js}}"></script>
+  <script src="/static/js/api.js?v={{v:js/api.js}}"></script>
+  <script src="/static/js/busca.js?v={{v:js/busca.js}}"></script>
+</body>
+</html>
