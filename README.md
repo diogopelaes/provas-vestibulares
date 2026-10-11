@@ -25,17 +25,11 @@ Na pasta [`app/`](./app/) encontra-se um servidor local leve em Python com inter
 
 ## 🔄 Sincronização com o Repositório Remoto (`sync.bat`)
 
-Para sincronizar facilmente todas as adições de provas e atualizações da aplicação com o repositório remoto no GitHub:
+O projeto inclui um mecanismo de sincronização **100% automático e silencioso**:
 
-- **Via Duplo-Clique**: Execute [`sync.bat`](./sync.bat) na raiz do projeto (ou [`app/sync.bat`](./app/sync.bat)).
-- **Via PowerShell**:
-  ```powershell
-  .\sync.ps1
-  ```
-  Ou especificando uma mensagem de commit personalizada:
-  ```powershell
-  .\sync.ps1 -Mensagem "feat: adiciona provas UNESP 2026"
-  ```
+- **Via Duplo-Clique**: Dê dois cliques em [`sync.bat`](./sync.bat) na raiz do projeto (ou em [`app/sync.bat`](./app/sync.bat)). O script executa todas as etapas e fecha automaticamente ao terminar sem exigir nenhuma confirmação manual.
+- **Funcionamento em Repositório Público**:
+  - **Para o Proprietário/Colaborador**: Comita alterações locais, integra novidades remotas e envia (`git push`) tudo de volta ao GitHub.
+  - **Para Quem Apenas Clonou (Uso Público/Sem Permissão de Escrita)**: O script baixa todas as atualizações e novas provas do repositório remoto via `git pull --rebase` e mantém o acervo local perfeitamente atualizado, sem falhar por falta de permissão de push.
 
-O script detecta arquivos modificados/novos, gera o commit, busca novidades com `git fetch`, integra alterações remotas com `git pull --rebase` e envia tudo com `git push`.
 
