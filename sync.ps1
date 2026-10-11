@@ -1,4 +1,4 @@
-<#
+﻿<#
 ===============================================================================
 ARQUIVO: sync.ps1
 CAMADA: Automação / Sincronização Git (PowerShell)
