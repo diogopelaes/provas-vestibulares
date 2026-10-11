@@ -3,31 +3,29 @@
 ARQUIVO: sync.ps1
 CAMADA: Automação / Sincronização Git (PowerShell)
 PAPEL NO SISTEMA:
-  - Realiza a sincronização bidirecional completa da aplicação e acervo
-    com o repositório remoto no GitHub:
+  - Realiza a sincronização 100% automática da aplicação e acervo com o GitHub:
       1. Valida o ambiente, presença do Git e integridade do repositório.
-      2. Detecta a branch atual e configurações do remote (padrão: origin).
+      2. Detecta a branch ativa e o repositório remoto (origin).
       3. Identifica alterações locais (arquivos modificados, novos ou removidos).
-      4. Registra as alterações locais (git add -A e git commit).
-      5. Busca atualizações do repositório remoto (git fetch).
+      4. Comita automaticamente alterações pendentes com timestamp (sem interação).
+      5. Busca atualizações do remoto (git fetch).
       6. Integra novidades do remoto de forma limpa (git pull --rebase).
-      7. Envia os commits locais para o repositório remoto (git push).
-      8. Exibe relatório visual detalhado com tratamento de exceções.
+      7. Se houver commits locais, envia para o remoto (git push).
+         * Tratamento inteligente para repositório público: se o usuário clonou
+           o repositório e não tem permissão de escrita (apenas leitura),
+           o script mantém as atualizações locais integradas via pull sem falhar!
+      8. Executa sem pausas por padrão (dois cliques, roda e fecha).
 ===============================================================================
 #>
 
 [CmdletBinding()]
 param (
-    [Parameter(Position = 0, ValueFromRemainingArguments = $true)]
-    [string[]]$Mensagem,
-
     [Parameter()]
     [string]$Remote = "origin",
 
     [Parameter()]
-    [switch]$NaoPausar
+    [switch]$Pausar
 )
-
 
 # Configuração de codificação para evitar problemas com acentuação e caracteres especiais
 $OutputEncoding = [System.Text.UTF8Encoding]::new()
@@ -51,7 +49,7 @@ $gitCmd = Get-Command git.exe -ErrorAction SilentlyContinue
 if (-not $gitCmd) {
     Write-Host "[ERRO] O executável git.exe não foi encontrado no PATH do sistema." -ForegroundColor Red
     Write-Host "Por favor, instale o Git para Windows ou verifique suas variáveis de ambiente." -ForegroundColor Yellow
-    if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+    Read-Host "Pressione Enter para fechar..."
     exit 1
 }
 
@@ -59,21 +57,20 @@ if (-not $gitCmd) {
 $isInsideWorkTree = & git rev-parse --is-inside-work-tree 2>$null
 if ($LASTEXITCODE -ne 0 -or $isInsideWorkTree -ne "true") {
     Write-Host "[ERRO] O diretório atual não é um repositório Git válido: $repoRoot" -ForegroundColor Red
-    if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+    Read-Host "Pressione Enter para fechar..."
     exit 1
 }
 
 # Obtém a branch atual
 $currentBranch = (& git branch --show-current 2>$null).Trim()
 if ([string]::IsNullOrWhiteSpace($currentBranch)) {
-    # Alternativa caso esteja em detached HEAD
     $currentBranch = (& git rev-parse --abbrev-ref HEAD 2>$null).Trim()
 }
 
 if ([string]::IsNullOrWhiteSpace($currentBranch) -or $currentBranch -eq "HEAD") {
     Write-Host "[ERRO] Não foi possível determinar a branch ativa (possível detached HEAD)." -ForegroundColor Red
     Write-Host "Verifique o estado do repositório com 'git status' antes de sincronizar." -ForegroundColor Yellow
-    if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+    Read-Host "Pressione Enter para fechar..."
     exit 1
 }
 
@@ -82,7 +79,7 @@ $remoteUrl = (& git remote get-url $Remote 2>$null)
 if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($remoteUrl)) {
     Write-Host "[ERRO] O remote '$Remote' não foi configurado neste repositório." -ForegroundColor Red
     Write-Host "Configure o remote com 'git remote add $Remote <URL>' antes de sincronizar." -ForegroundColor Yellow
-    if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+    Read-Host "Pressione Enter para fechar..."
     exit 1
 }
 
@@ -91,13 +88,11 @@ Write-Host " -> Branch atual: $currentBranch" -ForegroundColor Green
 Write-Host " -> Remote: $Remote ($remoteUrl)" -ForegroundColor Green
 
 # -----------------------------------------------------------------------------
-# 2. Identificação e Registro de Alterações Locais
+# 2. Identificação e Registro de Alterações Locais (100% Automático)
 # -----------------------------------------------------------------------------
 Write-Host "`n[2/5] Verificando alterações locais..." -ForegroundColor Yellow
 
 $statusLines = & git status --porcelain
-$houveCommitLocal = $false
-
 if ($statusLines) {
     $quantidadeAlteracoes = @($statusLines).Count
     Write-Host " -> Detectadas $quantidadeAlteracoes alteração(ões) pendente(s) localmente:" -ForegroundColor Cyan
@@ -106,29 +101,25 @@ if ($statusLines) {
         Write-Host "    $line" -ForegroundColor Gray
     }
 
-    $mensagemFinal = if ($Mensagem -and $Mensagem.Count -gt 0) { ($Mensagem -join " ").Trim().Trim('"').Trim("'") } else { "" }
-    if ([string]::IsNullOrWhiteSpace($mensagemFinal)) {
-        $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
-        $mensagemFinal = "sync: sincronização automática do acervo ($timestamp)"
-    }
+    $timestamp = (Get-Date).ToString("yyyy-MM-dd HH:mm:ss")
+    $mensagemCommit = "sync: sincronização automática do acervo ($timestamp)"
 
     Write-Host "`n -> Adicionando arquivos modificados/novos (git add -A)..." -ForegroundColor DarkCyan
     & git add -A
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERRO] Falha ao adicionar arquivos ao stage do Git." -ForegroundColor Red
-        if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+        Read-Host "Pressione Enter para fechar..."
         exit 1
     }
 
-    Write-Host " -> Criando commit local: '$mensagemFinal'..." -ForegroundColor DarkCyan
-    & git commit -m "$mensagemFinal"
+    Write-Host " -> Criando commit automático: '$mensagemCommit'..." -ForegroundColor DarkCyan
+    & git commit -m "$mensagemCommit"
     if ($LASTEXITCODE -ne 0) {
         Write-Host "[ERRO] Falha ao realizar commit das alterações locais." -ForegroundColor Red
-        if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+        Read-Host "Pressione Enter para fechar..."
         exit 1
     }
 
-    $houveCommitLocal = $true
     Write-Host " -> Alterações commitadas com sucesso." -ForegroundColor Green
 } else {
     Write-Host " -> Nenhuma alteração local pendente de commit." -ForegroundColor DarkGray
@@ -147,8 +138,8 @@ Write-Host "`n[3/5] Consultando repositório remoto ($Remote)..." -ForegroundCol
 
 if ($LASTEXITCODE -ne 0) {
     Write-Host "`n[ERRO] Falha ao conectar ao repositório remoto '$Remote'." -ForegroundColor Red
-    Write-Host "Verifique sua conexão com a internet e suas credenciais de acesso ao GitHub." -ForegroundColor Yellow
-    if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+    Write-Host "Verifique sua conexão com a internet." -ForegroundColor Yellow
+    Read-Host "Pressione Enter para fechar..."
     exit 1
 }
 
@@ -183,7 +174,7 @@ if ($hasRemoteBranch) {
             Write-Host " 2. Execute 'git add <arquivos-resolvidos>'." -ForegroundColor Gray
             Write-Host " 3. Conclua com 'git rebase --continue'." -ForegroundColor Gray
             Write-Host " (Ou cancele o processo com 'git rebase --abort')" -ForegroundColor DarkYellow
-            if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
+            Read-Host "Pressione Enter para fechar..."
             exit 1
         }
         Write-Host " -> Atualizações remotas integradas com sucesso." -ForegroundColor Green
@@ -191,13 +182,13 @@ if ($hasRemoteBranch) {
         Write-Host " -> O repositório local já contém todos os commits remotos." -ForegroundColor DarkGray
     }
 } else {
-    Write-Host " -> A branch '$currentBranch' ainda não existe no remoto '$Remote' (será publicada no push)." -ForegroundColor Cyan
+    Write-Host " -> A branch '$currentBranch' ainda não existe no remoto '$Remote'." -ForegroundColor Cyan
 }
 
 # -----------------------------------------------------------------------------
-# 5. Envio de Alterações Locais (Push)
+# 5. Envio de Alterações Locais (Push com Detecção de Permissão de Clone Público)
 # -----------------------------------------------------------------------------
-Write-Host "`n[5/5] Enviando dados para o repositório remoto (git push)..." -ForegroundColor Yellow
+Write-Host "`n[5/5] Verificando envio para o repositório remoto (git push)..." -ForegroundColor Yellow
 
 $commitsAfrente = 0
 if ($hasRemoteBranch) {
@@ -208,22 +199,39 @@ if ($hasRemoteBranch) {
 }
 
 if ($commitsAfrente -gt 0) {
-    Write-Host " -> Enviando $commitsAfrente commit(s) para '$Remote/$currentBranch'..." -ForegroundColor Cyan
-    
-    if (-not $hasRemoteBranch) {
-        & git push -u $Remote $currentBranch
+    Write-Host " -> Detectados $commitsAfrente commit(s) local(is) para envio." -ForegroundColor Cyan
+
+    # Tenta o push capturando a saída
+    $pushOutput = if (-not $hasRemoteBranch) {
+        & git push -u $Remote $currentBranch 2>&1
     } else {
-        & git push $Remote $currentBranch
+        & git push $Remote $currentBranch 2>&1
     }
+    $pushExitCode = $LASTEXITCODE
 
-    if ($LASTEXITCODE -ne 0) {
-        Write-Host "`n[ERRO] Falha ao enviar alterações para o repositório remoto." -ForegroundColor Red
-        Write-Host "Verifique permissões de escrita e status do repositório no GitHub." -ForegroundColor Yellow
-        if (-not $NaoPausar) { Read-Host "Pressione Enter para fechar..." }
-        exit 1
+    if ($pushExitCode -ne 0) {
+        $pushOutputStr = ($pushOutput | Out-String)
+        # Verifica se o erro foi decorrente de falta de permissão de escrita / autenticação (típico de clone público)
+        $isPermissionError = (
+            $pushOutputStr -match "Permission.*denied" -or
+            $pushOutputStr -match "403" -or
+            $pushOutputStr -match "Authentication failed" -or
+            $pushOutputStr -match "could not read Username" -or
+            $pushOutputStr -match "Invalid username or token"
+        )
+
+        if ($isPermissionError) {
+            Write-Host " -> [AVISO INFORMATIVO] Repositório em modo somente leitura (clone público sem permissão de escrita no GitHub)." -ForegroundColor Yellow
+            Write-Host " -> Todas as atualizações do repositório remoto foram baixadas e sincronizadas com seu acervo local com sucesso!" -ForegroundColor Green
+        } else {
+            Write-Host "`n[ERRO] Falha ao enviar alterações para o repositório remoto:" -ForegroundColor Red
+            Write-Host $pushOutputStr -ForegroundColor DarkRed
+            Read-Host "Pressione Enter para fechar..."
+            exit 1
+        }
+    } else {
+        Write-Host " -> Alterações enviadas com sucesso para '$Remote/$currentBranch'!" -ForegroundColor Green
     }
-
-    Write-Host " -> Envio concluído com sucesso!" -ForegroundColor Green
 } else {
     Write-Host " -> Nada a enviar. O repositório remoto já está perfeitamente em dia." -ForegroundColor DarkGray
 }
@@ -234,9 +242,10 @@ if ($commitsAfrente -gt 0) {
 Write-Host "`n==========================================================" -ForegroundColor Green
 Write-Host "      Sincronização Concluída com Sucesso!              " -ForegroundColor Green
 Write-Host "==========================================================" -ForegroundColor Green
-Write-Host "Status atual da branch '$currentBranch': Sincronizada com '$Remote'." -ForegroundColor White
+Write-Host "Status da branch '$currentBranch': Sincronizada." -ForegroundColor White
 
-if (-not $NaoPausar) {
+# Por padrão NÃO pausa (fecha direto). Pausa apenas se explicitamente solicitado com -Pausar.
+if ($Pausar) {
     Write-Host ""
     Read-Host "Pressione Enter para fechar..."
 }

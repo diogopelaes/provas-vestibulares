@@ -5,8 +5,8 @@
 :: PAPEL NO SISTEMA:
 ::   - Ponto de entrada rapido com duplo-clique no Windows Explorer.
 ::   - Executa o script PowerShell sync.ps1 com bypass de politica de execucao.
-::   - Repassa parametros opcionais (ex: "mensagem do commit").
-::   - Garante que a janela permanecera aberta em caso de erro para diagnostico.
+::   - 100% automatico: executa, sincroniza e fecha sem pedir confirmacoes.
+::   - Pausa apenas caso ocorra algum erro critico para diagnostico.
 :: ===============================================================================
 
 chcp 65001 >nul
