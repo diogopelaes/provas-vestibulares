@@ -16,6 +16,7 @@ PAPEL NO SISTEMA:
 """
 
 import argparse
+import html
 import json
 import logging
 import re
@@ -35,21 +36,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger("BuscaVestibulares")
 
-# Detecção de bibliotecas de leitura de PDF
+# Detecção de bibliotecas de leitura de PDF (PyMuPDF recomendado: import pymupdf)
 PDF_ENGINE = None
 try:
-    import fitz  # PyMuPDF
+    import pymupdf as fitz
     PDF_ENGINE = "fitz"
 except ImportError:
     try:
-        import PyPDF2
-        PDF_ENGINE = "pypdf2"
+        import fitz  # PyMuPDF legado
+        PDF_ENGINE = "fitz"
     except ImportError:
         try:
             import pypdf
             PDF_ENGINE = "pypdf"
         except ImportError:
-            PDF_ENGINE = None
+            try:
+                import PyPDF2
+                PDF_ENGINE = "pypdf2"
+            except ImportError:
+                PDF_ENGINE = None
 
 APP_DIR = Path(__file__).resolve().parent
 ROOT_DIR = APP_DIR.parent
@@ -98,6 +103,7 @@ def build_pt_regex(
     modo: str = "exata",
     sensivel_acentos: bool = False,
     sensivel_maiusculas: bool = False,
+    palavra_inteira: bool = False,
 ) -> re.Pattern:
     """
     Constrói expressão regular para casamento de termos em português,
@@ -105,27 +111,30 @@ def build_pt_regex(
       - sensibilidade ou insensibilidade a acentuação (padrão: flexível)
       - sensibilidade ou insensibilidade a maiúsculas (padrão: insensível)
       - modos: 'exata' (frase completa), 'todas' (todas as palavras), 'qualquer' (qualquer palavra)
+      - palavra_inteira: exige fronteiras de palavra (\b) para não casar dentro de palavras maiores
     """
     flags = 0 if sensivel_maiusculas else re.IGNORECASE
 
     def term_to_pattern(term: str) -> str:
         if sensivel_acentos:
-            return re.escape(term)
+            p = re.escape(term)
+        else:
+            # Transforma o termo decomposto em classes com variações acentuadas
+            base = strip_accents(term)
+            parts = []
+            for char in base:
+                low = char.lower()
+                if low in PORTUGUESE_CHAR_MAP:
+                    parts.append(PORTUGUESE_CHAR_MAP[low])
+                elif char.isalnum():
+                    parts.append(re.escape(char))
+                elif char.isspace():
+                    parts.append(r"\s+")
+                else:
+                    parts.append(re.escape(char))
+            p = "".join(parts)
 
-        # Transforma o termo decomposto em classes com variações acentuadas
-        base = strip_accents(term)
-        parts = []
-        for char in base:
-            low = char.lower()
-            if low in PORTUGUESE_CHAR_MAP:
-                parts.append(PORTUGUESE_CHAR_MAP[low])
-            elif char.isalnum():
-                parts.append(re.escape(char))
-            elif char.isspace():
-                parts.append(r"\s+")
-            else:
-                parts.append(re.escape(char))
-        return "".join(parts)
+        return rf"\b(?:{p})\b" if palavra_inteira else p
 
     query_clean = query.strip()
     if not query_clean:
@@ -203,15 +212,15 @@ def extract_snippets(
         prefix = "…" if c_start > 0 else ""
         suffix = "…" if c_end < len(text) else ""
 
-        # Monta trecho com tag <mark>
+        # Monta trecho com tag <mark>, garantindo escape HTML dos caracteres do PDF
         before = text[c_start:start_m]
         matched_str = text[start_m:end_m]
         after = text[end_m:c_end]
 
-        # Normaliza espaços em branco internos
-        before_clean = re.sub(r"\s+", " ", before)
-        after_clean = re.sub(r"\s+", " ", after)
-        matched_clean = re.sub(r"\s+", " ", matched_str)
+        # Normaliza espaços em branco internos e escapa HTML para exibição segura no frontend
+        before_clean = html.escape(re.sub(r"\s+", " ", before))
+        after_clean = html.escape(re.sub(r"\s+", " ", after))
+        matched_clean = html.escape(re.sub(r"\s+", " ", matched_str))
 
         snippet = f"{prefix}{before_clean}<mark>{matched_clean}</mark>{after_clean}{suffix}"
         snippets.append(snippet.strip())
@@ -425,6 +434,46 @@ def sync_index(
     }
 
 
+def index_single_file(pdf_path: Path, root_dir: Path = ROOT_DIR, db_path: Path = DB_PATH) -> bool:
+    """Indexa ou atualiza um único arquivo PDF no banco de dados de busca."""
+    if not pdf_path.is_file():
+        return False
+    try:
+        rel = pdf_path.relative_to(root_dir).as_posix()
+        vest = rel.split("/")[0]
+        ano, sem, fase, tipo = classify_file(pdf_path)
+        mtime = pdf_path.stat().st_mtime
+        pages = extract_pdf_pages(pdf_path)
+
+        conn = init_db(db_path)
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO indexed_files
+            (caminho, mtime, vestibular, ano, semestre, fase, tipo, num_paginas)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (rel, mtime, vest, ano, sem, fase, tipo, len(pages)),
+        )
+        conn.execute("DELETE FROM file_pages WHERE caminho = ?", (rel,))
+        pages_rows = [
+            (rel, idx + 1, page_text)
+            for idx, page_text in enumerate(pages)
+            if page_text.strip()
+        ]
+        if pages_rows:
+            conn.executemany(
+                "INSERT INTO file_pages (caminho, pagina, texto) VALUES (?, ?, ?)",
+                pages_rows,
+            )
+        conn.commit()
+        conn.close()
+        logger.info("Arquivo %s indexado com sucesso (%d páginas).", rel, len(pages))
+        return True
+    except Exception as exc:
+        logger.error("Erro ao indexar arquivo %s: %s", pdf_path, exc)
+        return False
+
+
 # =============================================================================
 # Motor de Busca Principal
 # =============================================================================
@@ -446,6 +495,7 @@ def buscar(
       - modo: "exata" | "todas" | "qualquer"
       - sensivel_acentos: bool (padrão: False)
       - sensivel_maiusculas: bool (padrão: False)
+      - palavra_inteira: bool (padrão: False)
       - limite: int (máximo de páginas retornadas, padrão: 250)
     """
     t0 = time.perf_counter()
@@ -467,6 +517,15 @@ def buscar(
     # Garante que o banco está pronto
     conn = init_db(db_path)
 
+    # Auto-indexação caso o banco esteja vazio
+    cur_chk = conn.cursor()
+    cur_chk.execute("SELECT COUNT(*) FROM indexed_files")
+    if cur_chk.fetchone()[0] == 0:
+        logger.info("Banco de busca vazio. Disparando sincronização inicial do acervo...")
+        conn.close()
+        sync_index(root_dir=root_dir, db_path=db_path)
+        conn = init_db(db_path)
+
     # Extrai opções
     vestibulares = [v.strip() for v in opts.get("vestibulares", []) if v and v.strip()]
     anos = [int(a) for a in opts.get("anos", []) if str(a).isdigit()]
@@ -477,6 +536,7 @@ def buscar(
     modo = opts.get("modo", "exata")
     sensivel_acentos = bool(opts.get("sensivel_acentos", False))
     sensivel_maiusculas = bool(opts.get("sensivel_maiusculas", False))
+    palavra_inteira = bool(opts.get("palavra_inteira", False))
     limite = int(opts.get("limite", 300))
 
     # Constrói o regex principal e subpadrões para modo 'todas'
@@ -485,6 +545,7 @@ def buscar(
         modo=modo,
         sensivel_acentos=sensivel_acentos,
         sensivel_maiusculas=sensivel_maiusculas,
+        palavra_inteira=palavra_inteira,
     )
 
     all_word_patterns: list[re.Pattern] = []
@@ -496,6 +557,7 @@ def buscar(
                 modo="exata",
                 sensivel_acentos=sensivel_acentos,
                 sensivel_maiusculas=sensivel_maiusculas,
+                palavra_inteira=palavra_inteira,
             )
             for w in words
         ]
@@ -625,6 +687,19 @@ def get_opcoes_busca(root_dir: Path = ROOT_DIR, db_path: Path = DB_PATH) -> dict
     conn = init_db(db_path)
     cur = conn.cursor()
 
+    cur.execute("SELECT COUNT(*), (SELECT COUNT(*) FROM file_pages) FROM indexed_files")
+    count_files, count_pages = cur.fetchone()
+
+    # Se banco ainda estiver vazio, dispara sincronização inicial automática
+    if count_files == 0:
+        logger.info("Banco de busca vazio ao carregar opções. Disparando sincronização inicial...")
+        conn.close()
+        sync_index(root_dir=root_dir, db_path=db_path)
+        conn = init_db(db_path)
+        cur = conn.cursor()
+        cur.execute("SELECT COUNT(*), (SELECT COUNT(*) FROM file_pages) FROM indexed_files")
+        count_files, count_pages = cur.fetchone()
+
     cur.execute("""
         SELECT
             vestibular,
@@ -640,9 +715,6 @@ def get_opcoes_busca(root_dir: Path = ROOT_DIR, db_path: Path = DB_PATH) -> dict
     cur.execute("SELECT DISTINCT ano FROM indexed_files WHERE ano > 0 ORDER BY ano DESC")
     anos = [r[0] for r in cur.fetchall()]
 
-    cur.execute("SELECT COUNT(*), (SELECT COUNT(*) FROM file_pages) FROM indexed_files")
-    count_files, count_pages = cur.fetchone()
-
     conn.close()
 
     vestibulares_info = []
@@ -657,7 +729,7 @@ def get_opcoes_busca(root_dir: Path = ROOT_DIR, db_path: Path = DB_PATH) -> dict
             }
         )
 
-    # Se banco ainda estiver vazio, busca pastas do disco
+    # Se ainda estiver vazio (caso não haja PDFs), usa pastas do disco
     if not vestibulares_info:
         for vest in get_vestibulares(root_dir):
             vestibulares_info.append(
@@ -703,6 +775,7 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("--modo", choices=["exata", "todas", "qualquer"], default="exata")
     parser.add_argument("--sensivel-acentos", action="store_true", help="Exige correspondência exata de acentos")
     parser.add_argument("--sensivel-maiusculas", action="store_true", help="Diferencia maiúsculas e minúsculas")
+    parser.add_argument("--palavra-inteira", action="store_true", help="Exige palavra inteira (fronteiras de palavra)")
     parser.add_argument("--limite", type=int, default=100, help="Limite de resultados")
 
     args = parser.parse_args(argv)
@@ -729,6 +802,7 @@ def main(argv: list[str] | None = None) -> None:
         "modo": args.modo,
         "sensivel_acentos": args.sensivel_acentos,
         "sensivel_maiusculas": args.sensivel_maiusculas,
+        "palavra_inteira": args.palavra_inteira,
         "limite": args.limite,
     }
 

@@ -97,37 +97,35 @@ if (-not (Test-Path $venvPython)) {
 }
 
 # -----------------------------------------------------------------------------
-# 2. Atualizar pip e instalar requirements
+# 2. Atualizar pip e instalar dependências no .venv
 # -----------------------------------------------------------------------------
-Write-Host "[pip] Atualizando pip..." -ForegroundColor Cyan
-try {
-    & $venvPython -m pip install --upgrade pip --quiet
-    Write-Host "[pip] Pip atualizado com sucesso!" -ForegroundColor Green
-} catch {
-    Write-Host "[Aviso] Falha ao atualizar o pip (continuando): $_" -ForegroundColor DarkYellow
-}
-
-$reqFiles = @(
-    (Join-Path $rootDir "requirements.txt"),
-    (Join-Path $appDir "requirements.txt")
-)
-
-foreach ($req in $reqFiles) {
-    if (Test-Path $req) {
-        if ((Get-Item $req).Length -gt 0) {
-            Write-Host "[requirements] Instalando dependências de $req..." -ForegroundColor Cyan
-            try {
-                & $venvPython -m pip install -r $req --quiet
-                Write-Host "[requirements] Dependências instaladas com sucesso!" -ForegroundColor Green
-            } catch {
-                Write-Host "[Aviso] Erro ao instalar dependências: $_" -ForegroundColor DarkYellow
-            }
-        }
+$reqPath = Join-Path $rootDir "requirements.txt"
+if (Test-Path $reqPath) {
+    Write-Host "[pip] Garantindo dependências no .venv..." -ForegroundColor Cyan
+    try {
+        & $venvPython -m pip install -r $reqPath --quiet
+        Write-Host "[pip] Dependências verificadas com sucesso!" -ForegroundColor Green
+    } catch {
+        Write-Host "[Aviso] Falha ao executar pip: $_" -ForegroundColor Yellow
     }
 }
 
 # -----------------------------------------------------------------------------
-# 3. Varredura de Portas Disponíveis (Inicia em 8000)
+# 3. Verificar / Inicializar Índice de Busca nos PDFs
+# -----------------------------------------------------------------------------
+$dbPath = Join-Path $appDir ".search_cache.db"
+$buscaScript = Join-Path $appDir "busca.py"
+if (-not (Test-Path $dbPath)) {
+    Write-Host "[Busca] Banco de busca não encontrado. Criando índice inicial dos PDFs..." -ForegroundColor Cyan
+    try {
+        & $venvPython $buscaScript --indexar
+    } catch {
+        Write-Host "[Aviso] Erro na indexação inicial: $_" -ForegroundColor Yellow
+    }
+}
+
+# -----------------------------------------------------------------------------
+# 4. Varredura de Portas Disponíveis (Inicia em 8000)
 # -----------------------------------------------------------------------------
 function Test-PortInUse([int]$port) {
     $tcp = Get-NetTCPConnection -LocalPort $port -ErrorAction SilentlyContinue
@@ -174,12 +172,12 @@ $url = "http://localhost:$porta"
 Write-Host "[Servidor] Porta selecionada: $porta" -ForegroundColor Green
 
 # -----------------------------------------------------------------------------
-# 4. Executar o Servidor em Outro Terminal
+# 5. Executar o Servidor em Outro Terminal
 # -----------------------------------------------------------------------------
 Write-Host "[Servidor] Iniciando servidor em novo terminal..." -ForegroundColor Cyan
 
 $serverScriptBlock = @"
-`$host.UI.RawUI.WindowTitle = 'Servidor - Provas de Vestibulares (Porta $porta)'
+`$host.UI.RawUI.WindowTitle = 'Provas de Vestibulares (Porta $porta)'
 Write-Host '==========================================================' -ForegroundColor Cyan
 Write-Host '      Servidor Ativo - Provas de Vestibulares            ' -ForegroundColor Cyan
 Write-Host '==========================================================' -ForegroundColor Cyan
@@ -202,7 +200,7 @@ Start-Process -FilePath "powershell.exe" `
     -WorkingDirectory $rootDir
 
 # -----------------------------------------------------------------------------
-# 5. Aguardar Servidor Responder e Abrir Navegador
+# 6. Aguardar Servidor Responder e Abrir Navegador
 # -----------------------------------------------------------------------------
 Write-Host "[Servidor] Aguardando o servidor responder em $url..." -ForegroundColor Cyan
 $tentativas = 0

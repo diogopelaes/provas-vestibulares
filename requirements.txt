@@ -1,0 +1,5 @@
+# Motor principal de alta performance para leitura e indexação de PDFs (fitz)
+PyMuPDF>=1.24.0
+
+# Motor alternativo / fallback puro em Python para leitura de PDFs
+pypdf>=4.0.0

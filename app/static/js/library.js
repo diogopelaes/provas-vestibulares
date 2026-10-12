@@ -424,32 +424,50 @@
 
     // Estado vazio caso a busca não retorne itens
     if (totalExibidos === 0) {
-      elContent.appendChild(
-        h(
-          'div',
-          { class: 'empty' },
-          iconNode('inbox'),
-          h('h3', null, 'Nenhuma prova encontrada'),
-          h('p', null, termoBusca ? `Nenhum resultado corresponde a "${termoBusca}".` : 'Nenhum exame atende aos filtros atuais.'),
-          termoBusca || faseAtiva !== 'todas' || apenasComGabarito
-            ? h(
-                'button',
-                {
-                  type: 'button',
-                  class: 'btn btn-ghost',
-                  onclick: () => {
-                    termoBusca = '';
-                    faseAtiva = 'todas';
-                    apenasComGabarito = false;
-                    if (elSearch) elSearch.value = '';
-                    renderContent();
-                  },
-                },
-                'Limpar filtros'
-              )
-            : null
-        )
-      );
+      const emptyChildren = [
+        iconNode('inbox'),
+        h('h3', null, 'Nenhuma prova encontrada'),
+        h('p', null, termoBusca ? `Nenhum título corresponde a "${termoBusca}".` : 'Nenhum exame atende aos filtros atuais.'),
+      ];
+
+      // Se houver termo de busca, oferece atalho para buscar no conteúdo dos PDFs
+      if (termoBusca) {
+        emptyChildren.push(
+          h(
+            'a',
+            {
+              href: `/busca?q=${encodeURIComponent(termoBusca)}`,
+              class: 'btn btn-primary',
+              style: { marginTop: '0.5rem', textDecoration: 'none' },
+              title: `Pesquisar "${termoBusca}" dentro das páginas de todos os PDFs`,
+            },
+            iconNode('search'),
+            `Buscar "${termoBusca}" dentro dos PDFs →`
+          )
+        );
+      }
+
+      if (termoBusca || faseAtiva !== 'todas' || apenasComGabarito) {
+        emptyChildren.push(
+          h(
+            'button',
+            {
+              type: 'button',
+              class: 'btn btn-ghost',
+              onclick: () => {
+                termoBusca = '';
+                faseAtiva = 'todas';
+                apenasComGabarito = false;
+                if (elSearch) elSearch.value = '';
+                renderContent();
+              },
+            },
+            'Limpar filtros'
+          )
+        );
+      }
+
+      elContent.appendChild(h('div', { class: 'empty' }, ...emptyChildren));
     }
   }
 
@@ -493,6 +511,28 @@
             renderContent();
           }, 180)
         );
+
+        // Teclar Enter no input da biblioteca redireciona para busca nos PDFs se não houver match direto
+        elSearch.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            const val = elSearch.value.trim();
+            if (val) {
+              window.location.href = `/busca?q=${encodeURIComponent(val)}`;
+            }
+          }
+        });
+      }
+
+      // Botão "Buscar nos PDFs" na toolbar leva termo atual se houver
+      const btnSearchPdfs = document.getElementById('btn-search-pdfs');
+      if (btnSearchPdfs && elSearch) {
+        btnSearchPdfs.addEventListener('click', (e) => {
+          const val = elSearch.value.trim();
+          if (val) {
+            e.preventDefault();
+            window.location.href = `/busca?q=${encodeURIComponent(val)}`;
+          }
+        });
       }
 
       window.addEventListener('hashchange', handleHash);

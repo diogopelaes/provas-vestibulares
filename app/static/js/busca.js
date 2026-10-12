@@ -43,6 +43,11 @@
     chkTipoResol: document.getElementById('chk-tipo-resol'),
     chkIgnoreAccents: document.getElementById('chk-ignore-accents'),
     chkCaseSensitive: document.getElementById('chk-case-sensitive'),
+    chkWordBoundary: document.getElementById('chk-word-boundary'),
+    indexStatusCard: document.getElementById('index-status-card'),
+    indexStatusMsg: document.getElementById('index-status-msg'),
+    btnSyncIndex: document.getElementById('btn-sync-index'),
+    btnSyncLabel: document.getElementById('btn-sync-label'),
     statusBar: document.getElementById('status-bar'),
     statusText: document.getElementById('status-text'),
     statusTime: document.getElementById('status-time'),
@@ -63,6 +68,17 @@
       state.vestibularesDisponiveis = data.vestibulares || [];
       state.anosDisponiveis = data.anos_disponiveis || [];
 
+      // Atualiza exibição do status do índice
+      if (elements.indexStatusMsg && data.status_indice) {
+        const totalArq = data.status_indice.total_arquivos || 0;
+        const totalPag = data.status_indice.total_paginas || 0;
+        if (totalArq > 0) {
+          elements.indexStatusMsg.innerHTML = `Acervo indexado: <strong>${totalArq} provas</strong> · <strong>${totalPag} páginas</strong> disponíveis para busca imediata.`;
+        } else {
+          elements.indexStatusMsg.innerHTML = `<span style="color: var(--warn, #e3b341);">Índice vazio. Clique em Sincronizar Acervo para indexar os PDFs.</span>`;
+        }
+      }
+
       // Seleciona todos os vestibulares por padrão
       state.selecionadosVest = new Set(state.vestibularesDisponiveis.map((v) => v.nome));
       // Seleciona todos os anos por padrão
@@ -70,9 +86,33 @@
 
       renderizarChipsVestibulares();
       renderizarGridAnos();
+
+      // Executa busca automática se houver termo na URL
+      verificarParametroUrl();
     } catch (err) {
       console.error(err);
       toast('Não foi possível carregar os vestibulares disponíveis.', { tipo: 'danger' });
+    }
+  }
+
+  async function sincronizarAcervo() {
+    if (!elements.btnSyncIndex) return;
+    elements.btnSyncIndex.disabled = true;
+    if (elements.btnSyncLabel) elements.btnSyncLabel.textContent = 'Indexando…';
+    if (elements.indexStatusMsg) elements.indexStatusMsg.textContent = 'Processando páginas dos PDFs e atualizando índice local…';
+
+    try {
+      const resp = await fetch('/api/busca/sync', { method: 'POST' });
+      if (!resp.ok) throw new Error('Falha ao sincronizar índice.');
+      const resData = await resp.json();
+      toast(`Índice atualizado! ${resData.novos_ou_atualizados || 0} arquivos processados.`, { tipo: 'success' });
+      await carregarOpcoes();
+    } catch (err) {
+      console.error(err);
+      toast('Erro ao sincronizar o índice: ' + err.message, { tipo: 'danger' });
+    } finally {
+      elements.btnSyncIndex.disabled = false;
+      if (elements.btnSyncLabel) elements.btnSyncLabel.textContent = 'Sincronizar Acervo';
     }
   }
 
@@ -190,6 +230,16 @@
       return;
     }
 
+    if (state.selecionadosVest.size === 0) {
+      toast('Selecione ao menos um vestibular nos filtros.', { tipo: 'warn' });
+      return;
+    }
+
+    if (state.selecionadosAnos.size === 0) {
+      toast('Selecione ao menos um ano nos filtros.', { tipo: 'warn' });
+      return;
+    }
+
     // Tipos de arquivos
     const tipos = [];
     if (elements.chkTipoProva.checked) tipos.push('prova');
@@ -200,6 +250,13 @@
       toast('Selecione ao menos um tipo de arquivo (Provas ou Gabaritos).', { tipo: 'warn' });
       return;
     }
+
+    // Atualiza query param na URL da página de forma transparente
+    try {
+      const url = new URL(window.location.href);
+      url.searchParams.set('q', termo);
+      window.history.replaceState({}, '', url.toString());
+    } catch (_) {}
 
     // Modo de combinação
     const modoInput = document.querySelector('input[name="search-mode"]:checked');
@@ -214,6 +271,7 @@
       modo,
       sensivel_acentos: !elements.chkIgnoreAccents.checked,
       sensivel_maiusculas: elements.chkCaseSensitive.checked,
+      palavra_inteira: elements.chkWordBoundary ? elements.chkWordBoundary.checked : false,
       limite: 300,
     };
 
@@ -524,11 +582,25 @@
       }
     });
 
+    // Sincronização do acervo sob demanda
+    if (elements.btnSyncIndex) {
+      elements.btnSyncIndex.addEventListener('click', sincronizarAcervo);
+    }
+
     elements.input.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         elements.input.blur();
       }
     });
+  }
+
+  function verificarParametroUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const termo = params.get('q') || params.get('termo');
+    if (termo && termo.trim()) {
+      elements.input.value = termo.trim();
+      executarBusca(termo.trim());
+    }
   }
 
   // Inicialização

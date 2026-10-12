@@ -47,14 +47,15 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from busca import buscar, get_opcoes_busca, sync_index
+    from busca import buscar, get_opcoes_busca, sync_index, index_single_file
 except ImportError:
     try:
-        from app.busca import buscar, get_opcoes_busca, sync_index
+        from app.busca import buscar, get_opcoes_busca, sync_index, index_single_file
     except ImportError:
         buscar = None
         get_opcoes_busca = None
         sync_index = None
+        index_single_file = None
 
 logging.basicConfig(
     level=logging.INFO,
@@ -404,6 +405,25 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
         disposition = f"inline; filename*=UTF-8''{urllib.parse.quote(path.name)}"
         self._send_file(path, "application/pdf", "no-cache", {"Content-Disposition": disposition})
 
+    def do_HEAD(self) -> None:
+        path = urllib.parse.urlparse(self.path).path
+        if path.startswith("/arquivos/"):
+            relative = path.removeprefix("/arquivos/")
+            target = resolve_inside(ROOT_DIR, relative)
+            if target and target.is_file() and target.suffix.lower() == ".pdf":
+                disposition = f"inline; filename*=UTF-8''{urllib.parse.quote(target.name)}"
+                self.send_response(200)
+                self.send_header("Content-Type", "application/pdf")
+                self.send_header("Content-Length", str(target.stat().st_size))
+                self.send_header("Cache-Control", "no-cache")
+                self.send_header("Content-Disposition", disposition)
+                self.end_headers()
+                return
+            self.send_error(404, "PDF não encontrado.")
+            return
+        self.send_response(200)
+        self.end_headers()
+
     def do_GET(self) -> None:
         path = urllib.parse.urlparse(self.path).path
 
@@ -424,6 +444,8 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
                 self._send_json(500, {"error": "Módulo de busca não disponível."})
             else:
                 self._send_json(200, get_opcoes_busca(ROOT_DIR))
+        elif path == "/api/busca/sync":
+            self._handle_busca_sync()
         elif path == "/api/busca":
             self._handle_busca_get()
         else:
@@ -444,12 +466,25 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
             self._handle_preview(data)
         elif path == "/api/upload":
             self._handle_upload(data)
+        elif path == "/api/busca/sync":
+            self._handle_busca_sync()
         elif path == "/api/busca":
             self._handle_busca_post(data)
         else:
             self._send_json(404, {"error": "Endpoint não encontrado."})
 
     # ---------------------------------------------------------------- handlers
+    def _handle_busca_sync(self) -> None:
+        if sync_index is None:
+            self._send_json(500, {"error": "Módulo de busca indisponível."})
+            return
+        try:
+            resultado = sync_index(ROOT_DIR)
+            self._send_json(200, resultado)
+        except Exception as exc:
+            logger.error("Erro na sincronização manual do índice: %s", exc)
+            self._send_json(500, {"error": f"Erro ao sincronizar índice: {exc}"})
+
     def _handle_busca_get(self) -> None:
         if buscar is None:
             self._send_json(500, {"error": "Módulo de busca indisponível."})
@@ -463,6 +498,7 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
         modo = query_params.get("modo", ["exata"])[0]
         sensivel_acentos = query_params.get("sensivel_acentos", ["false"])[0].lower() in ("true", "1")
         sensivel_maiusculas = query_params.get("sensivel_maiusculas", ["false"])[0].lower() in ("true", "1")
+        palavra_inteira = query_params.get("palavra_inteira", ["false"])[0].lower() in ("true", "1")
         resultado = buscar(
             termo,
             {
@@ -472,6 +508,7 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
                 "modo": modo,
                 "sensivel_acentos": sensivel_acentos,
                 "sensivel_maiusculas": sensivel_maiusculas,
+                "palavra_inteira": palavra_inteira,
             },
             root_dir=ROOT_DIR,
         )
@@ -484,6 +521,7 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
         termo = str(data.get("termo", "")).strip()
         resultado = buscar(termo, data, root_dir=ROOT_DIR)
         self._send_json(200, resultado)
+
     def _handle_preview(self, data: dict[str, Any]) -> None:
         try:
             vestibular, ano, fase, prefixo_usp = validate_upload_params(data)
@@ -528,6 +566,14 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
                 target.write_bytes(content)
                 saved_files.append(f"{destino['dest_folder']}/{destino[name_key]}")
                 logger.info("Arquivo salvo: %s (%d bytes)", target, len(content))
+
+                # Indexação automática e imediata no banco de busca
+                if index_single_file is not None:
+                    try:
+                        index_single_file(target, ROOT_DIR)
+                    except Exception as exc_idx:
+                        logger.warning("Falha ao indexar arquivo salvo %s: %s", target.name, exc_idx)
+
         except OSError as exc:
             logger.error("Erro ao gravar arquivos: %s", exc)
             self._send_json(500, {"error": f"Erro ao gravar arquivos: {exc}"})
@@ -545,7 +591,22 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
 
 
 def run_server(port: int = PORT) -> None:
-    """Inicia o servidor HTTP (multithread, para servir PDFs em paralelo)."""
+    """Inicia o servidor HTTP (multithread, com sincronização em background)."""
+    # Sincronização automática em background para garantir que o acervo esteja sempre indexado
+    if sync_index is not None:
+        import threading
+
+        def background_sync():
+            try:
+                logger.info("Verificando integridade do índice de busca nos PDFs em segundo plano...")
+                res = sync_index(ROOT_DIR)
+                logger.info("Índice de busca verificado: %d atualizados em %.2fs.", res.get("novos_ou_atualizados", 0), res.get("tempo_s", 0))
+            except Exception as e:
+                logger.warning("Falha na sincronização do índice em segundo plano: %s", e)
+
+        t = threading.Thread(target=background_sync, daemon=True)
+        t.start()
+
     httpd = http.server.ThreadingHTTPServer(("", port), VestibularesHandler)
     logger.info("Servidor iniciado em http://localhost:%d", port)
     try:
