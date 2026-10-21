@@ -63,9 +63,9 @@ DB_PATH = APP_DIR / ".search_cache.db"
 IGNORED_DIRS = {".git", ".vscode", ".venv", "__pycache__", "app", "build", "dist"}
 
 FILE_PATTERN = re.compile(
-    r"^(?P<prefixo>[A-Za-z]+)_(?P<ano>\d{4})"
+    r"^(?P<prefixo>[a-zA-ZÀ-ÿ]+)_(?P<ano>\d{4})"
     r"(?:_(?P<semestre>\d))?"
-    r"(?:_(?P<fase>\d)Fase)?"
+    r"(?:_(?P<etapa>\d)(?P<tipo_etapa>Fase|Serie))?"
     r"(?:_(?P<tipo>gab|resol))?$",
     re.IGNORECASE,
 )
@@ -249,13 +249,29 @@ def classify_file(path: Path) -> tuple[int, str | None, str, str]:
     if match:
         ano = int(match["ano"])
         semestre = match["semestre"]
-        fase = match["fase"] or ("1" if "1Fase" in path.stem else ("2" if "2Fase" in path.stem else "unica"))
+        tipo_etapa = (match.groupdict().get("tipo_etapa") or "").lower()
+        etapa = match.groupdict().get("etapa")
+        if tipo_etapa == "serie" and etapa:
+            fase = f"{etapa}_serie"
+        elif tipo_etapa == "fase" and etapa:
+            fase = etapa
+        else:
+            fase = "unica" if path.parent.name in ("AFA", "ENEM") else ("1" if "1" in path.parent.name else "unica")
         tipo = DOC_TYPES.get((match["tipo"] or "").lower(), "prova")
         return ano, semestre, fase, tipo
 
     year_match = YEAR_PATTERN.search(path.stem)
     ano = int(year_match.group(0)) if year_match else 0
-    fase = "1" if "1" in path.parent.name else ("2" if "2" in path.parent.name else "unica")
+    parent_name = path.parent.name.lower()
+    if "série" in parent_name or "serie" in parent_name:
+        m_s = re.search(r"(\d)", parent_name)
+        fase = f"{m_s.group(1)}_serie" if m_s else "serie"
+    elif "1" in parent_name:
+        fase = "1"
+    elif "2" in parent_name:
+        fase = "2"
+    else:
+        fase = "unica"
     tipo = "gabarito" if "_gab" in path.stem.lower() else ("resolucao" if "_resol" in path.stem.lower() else "prova")
     return ano, None, fase, tipo
 

@@ -144,13 +144,16 @@ CACHE BUSTING:
           <p class="field-hint" id="up-afa-hint" hidden>A AFA tem etapa única — os arquivos ficam direto na pasta AFA.</p>
         </div>
 
-        <label class="field" id="up-usp-field" hidden>
-          <span class="field-label">Prefixo do arquivo (USP · 1ª Fase)</span>
-          <select id="up-prefixo">
-            <option value="FEVEST" selected>FEVEST — padrão atual da pasta</option>
-            <option value="FUVEST">FUVEST</option>
-          </select>
-        </label>
+        <div class="field" id="up-serie-field" hidden>
+          <span class="field-label" id="up-serie-label">Série do Ensino Médio</span>
+          <div class="segmented" role="radiogroup" aria-labelledby="up-serie-label">
+            <label><input type="radio" name="serie" value="1" checked><span>1ª Série</span></label>
+            <label><input type="radio" name="serie" value="2"><span>2ª Série</span></label>
+            <label><input type="radio" name="serie" value="3"><span>3ª Série</span></label>
+          </div>
+          <p class="field-hint">O Provão Paulista tem etapa única, organizado por série do Ensino Médio.</p>
+        </div>
+
 
         <div class="form-row">
           <div class="dropzone" data-kind="prova">

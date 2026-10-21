@@ -28,9 +28,8 @@
   const selVest = document.getElementById('up-vestibular');
   const inpAno = document.getElementById('up-ano');
   const faseField = document.getElementById('up-fase-field');
+  const serieField = document.getElementById('up-serie-field');
   const afaHint = document.getElementById('up-afa-hint');
-  const uspField = document.getElementById('up-usp-field');
-  const selPrefixo = document.getElementById('up-prefixo');
   const pvPasta = document.getElementById('pv-pasta');
   const pvProva = document.getElementById('pv-prova');
   const pvGabarito = document.getElementById('pv-gabarito');
@@ -59,6 +58,10 @@
         if (!file) {
           arquivos[kind] = null;
           dz.classList.remove('has-file');
+          if (nameEl) {
+            nameEl.textContent = '';
+            nameEl.removeAttribute('title');
+          }
           if (input) input.value = '';
           return;
         }
@@ -70,6 +73,7 @@
 
         arquivos[kind] = file;
         nameEl.textContent = file.name;
+        nameEl.title = file.name;
         sizeEl.textContent = formatBytes(file.size);
         dz.classList.add('has-file');
       }
@@ -129,28 +133,56 @@
     const ano = inpAno.value.trim() || 'ANO';
     const faseRadio = document.querySelector('input[name="fase"]:checked');
     const fase = faseRadio ? faseRadio.value : '1';
-    const prefixoUsp = selPrefixo ? selPrefixo.value : 'FEVEST';
+    const serieRadio = document.querySelector('input[name="serie"]:checked');
+    const serie = serieRadio ? serieRadio.value : '1';
 
-    // Regra AFA
-    if (vest === 'AFA') {
-      if (faseField) faseField.querySelector('.segmented')?.classList.add('is-disabled');
-      if (afaHint) afaHint.hidden = false;
-      if (uspField) uspField.hidden = true;
+    // Regra AFA e ENEM (Etapa única na raiz da pasta)
+    if (vest === 'AFA' || vest === 'ENEM') {
+      if (faseField) {
+        faseField.hidden = false;
+        faseField.querySelector('.segmented')?.classList.add('is-disabled');
+      }
+      if (afaHint) {
+        afaHint.hidden = false;
+        afaHint.textContent =
+          vest === 'AFA'
+            ? 'A AFA tem etapa única — os arquivos ficam direto na pasta AFA.'
+            : 'O ENEM tem etapa única — os arquivos ficam direto na pasta ENEM.';
+      }
+      if (serieField) serieField.hidden = true;
 
-      pvPasta.textContent = 'AFA/';
-      pvProva.textContent = `AFA_${ano}.pdf`;
-      pvGabarito.textContent = `AFA_${ano}_gab.pdf`;
+      pvPasta.textContent = `${vest}/`;
+      pvProva.textContent = `${vest}_${ano}.pdf`;
+      pvGabarito.textContent = `${vest}_${ano}_gab.pdf`;
       pvWarn.hidden = true;
       return;
     }
 
-    if (faseField) faseField.querySelector('.segmented')?.classList.remove('is-disabled');
-    if (afaHint) afaHint.hidden = true;
+    // Regra PROVÃO (Etapa única separada por série)
+    if (vest === 'PROVÃO' || vest === 'PROVAO') {
+      if (faseField) faseField.hidden = true;
+      if (afaHint) afaHint.hidden = true;
+      if (serieField) serieField.hidden = false;
 
-    // Regra USP
+      const folder = `${vest}/${serie}ª Série/`;
+      pvPasta.textContent = folder;
+      pvProva.textContent = `PROVAO_${ano}_${serie}Serie.pdf`;
+      pvGabarito.textContent = `PROVAO_${ano}_${serie}Serie_gab.pdf`;
+      pvWarn.hidden = true;
+      return;
+    }
+
+    // Demais Vestibulares com fases (IME, ITA, UNESP, UNICAMP, USP)
+    if (faseField) {
+      faseField.hidden = false;
+      faseField.querySelector('.segmented')?.classList.remove('is-disabled');
+    }
+    if (afaHint) afaHint.hidden = true;
+    if (serieField) serieField.hidden = true;
+
+    // Regra USP (1ª Fase é FEVEST e 2ª Fase é FUVEST automaticamente)
     if (vest === 'USP') {
-      if (uspField) uspField.hidden = fase !== '1';
-      const prefix = fase === '1' ? prefixoUsp : 'FUVEST';
+      const prefix = fase === '1' ? 'FEVEST' : 'FUVEST';
       const folder = fase === '1' ? 'USP/1ª Fase/' : 'USP/2ª Fase/';
 
       pvPasta.textContent = folder;
@@ -159,8 +191,6 @@
       pvWarn.hidden = true;
       return;
     }
-
-    if (uspField) uspField.hidden = true;
 
     // Demais Vestibulares (IME, ITA, UNESP, UNICAMP)
     const folder = `${vest}/${fase}ª Fase/`;
@@ -221,7 +251,8 @@
     const ano = inpAno.value.trim();
     const faseRadio = document.querySelector('input[name="fase"]:checked');
     const fase = faseRadio ? faseRadio.value : '1';
-    const prefixoUsp = selPrefixo ? selPrefixo.value : 'FEVEST';
+    const serieRadio = document.querySelector('input[name="serie"]:checked');
+    const serie = serieRadio ? serieRadio.value : '1';
 
     if (!ano || ano.length !== 4) {
       toast('Informe um ano válido com 4 dígitos.', { type: 'error' });
@@ -237,7 +268,7 @@
         vestibular: vest,
         ano,
         fase,
-        prefixo_usp: prefixoUsp,
+        serie,
       };
 
       if (arquivos.prova) {
@@ -300,7 +331,9 @@
       document.querySelectorAll('input[name="fase"]').forEach((r) => {
         r.addEventListener('change', atualizarPreview);
       });
-      selPrefixo?.addEventListener('change', atualizarPreview);
+      document.querySelectorAll('input[name="serie"]').forEach((r) => {
+        r.addEventListener('change', atualizarPreview);
+      });
 
       // Botão fechar (data-close)
       dialog.querySelectorAll('[data-close]').forEach((btn) => {

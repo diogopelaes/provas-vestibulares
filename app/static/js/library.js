@@ -120,7 +120,7 @@
   // ---------------------------------------------------------------------------
   // Filtros (Chips de Fase + Switch de Gabarito)
   // ---------------------------------------------------------------------------
-  function renderFilters(fasesDisponiveis) {
+  function renderFilters(fasesMap) {
     if (!elFilters) return;
     elFilters.innerHTML = '';
 
@@ -137,17 +137,12 @@
           renderContent();
         },
       },
-      'Todas as fases'
+      'Todas as etapas'
     );
     chipsWrapper.appendChild(chipTodas);
 
-    // Chips específicos das fases presentes
-    fasesDisponiveis.forEach((faseKey) => {
-      let label = faseKey;
-      if (faseKey === '1') label = '1ª Fase';
-      else if (faseKey === '2') label = '2ª Fase';
-      else if (faseKey === 'unica') label = 'Fase Única';
-
+    // Chips específicos das fases e séries presentes
+    fasesMap.forEach((label, faseKey) => {
       const chip = h(
         'button',
         {
@@ -310,14 +305,28 @@
       return true;
     });
 
-    // Descobrir todas as fases presentes no contexto
-    const fasesSet = new Set();
+    // Descobrir todas as fases e séries presentes no contexto
+    const fasesMap = new Map();
     vestibularesFiltrados.forEach((v) => {
       v.grupos.forEach((g) => {
-        if (g.fase) fasesSet.add(g.fase);
+        if (g.fase && !fasesMap.has(g.fase)) {
+          let label = g.rotulo || g.titulo;
+          if (g.fase === 'unica') label = 'Fase Única';
+          else if (g.fase === '1') label = '1ª Fase';
+          else if (g.fase === '2') label = '2ª Fase';
+          else if (g.fase === '1_serie') label = '1ª Série';
+          else if (g.fase === '2_serie') label = '2ª Série';
+          else if (g.fase === '3_serie') label = '3ª Série';
+          fasesMap.set(g.fase, label);
+        }
       });
     });
-    renderFilters(Array.from(fasesSet));
+
+    if (faseAtiva !== 'todas' && !fasesMap.has(faseAtiva)) {
+      faseAtiva = 'todas';
+    }
+
+    renderFilters(fasesMap);
 
     // Atualizar títulos do cabeçalho
     if (vestibularAtivo) {

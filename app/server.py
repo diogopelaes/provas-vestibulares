@@ -23,7 +23,8 @@ ENDPOINTS:
 REGRAS DE NOMENCLATURA (arquivos no acervo):
   - {PREFIXO}_{ANO}[_{SEMESTRE}][_{N}Fase][_gab|_resol].pdf
       * sem sufixo -> prova | _gab -> gabarito | _resol -> resolução
-  - AFA: raiz de AFA/ (AFA_{ano}.pdf / AFA_{ano}_gab.pdf).
+  - AFA, ENEM: raiz da pasta (ex.: AFA_{ano}.pdf, ENEM_{ano}.pdf).
+  - PROVÃO: PROVÃO/{N}ª Série/ (PROVAO_{ano}_{N}Serie.pdf).
   - IME, ITA, UNESP, UNICAMP: {VEST}/1ª Fase/ ou 2ª Fase/.
   - USP: 1ª Fase com prefixo FEVEST (padrão histórico) e 2ª Fase com FUVEST.
 SEGURANÇA:
@@ -72,9 +73,9 @@ PORT = 8000
 
 IGNORED_DIRS = {".git", ".vscode", ".venv", "__pycache__", "app", "build", "dist"}
 FILE_PATTERN = re.compile(
-    r"^(?P<prefixo>[A-Za-z]+)_(?P<ano>\d{4})"
+    r"^(?P<prefixo>[a-zA-ZÀ-ÿ]+)_(?P<ano>\d{4})"
     r"(?:_(?P<semestre>\d))?"
-    r"(?:_(?P<fase>\d)Fase)?"
+    r"(?:_(?P<etapa>\d)(?P<tipo_etapa>Fase|Serie))?"
     r"(?:_(?P<tipo>gab|resol))?$",
     re.IGNORECASE,
 )
@@ -147,14 +148,27 @@ def describe_group(pasta: str) -> dict[str, Any]:
     """Descreve um grupo (subpasta do vestibular): título, fase e ordem de exibição."""
     parts = [part for part in pasta.split("/") if part]
     if not parts:
-        return {"titulo": "Fase única", "fase": "unica", "ordem": 90}
+        return {"titulo": "Fase única", "fase": "unica", "rotulo": "Fase Única", "ordem": 90}
 
-    match = re.match(r"\d", parts[0])
+    match = re.match(r"(\d+)[ªaºo]?\s*(S[eé]rie|Fase)?", parts[0], re.IGNORECASE)
     if not match:
-        return {"titulo": " · ".join(parts), "fase": "outros", "ordem": 80}
+        return {"titulo": " · ".join(parts), "fase": "outros", "rotulo": " · ".join(parts), "ordem": 80}
 
-    fase = match.group(0)
-    return {"titulo": " · ".join(parts), "fase": fase, "ordem": int(fase) * 10 + len(parts)}
+    num = match.group(1)
+    tipo = (match.group(2) or "").lower()
+    if tipo.startswith("s"):  # Série / Serie
+        fase_id = f"{num}_serie"
+        rotulo = f"{num}ª Série"
+    else:
+        fase_id = num
+        rotulo = f"{num}ª Fase"
+
+    return {
+        "titulo": " · ".join(parts),
+        "fase": fase_id,
+        "rotulo": rotulo,
+        "ordem": int(num) * 10 + len(parts),
+    }
 
 
 def classify_file(path: Path) -> tuple[str, int, str | None, str]:
@@ -215,6 +229,7 @@ def build_vestibular_catalog(nome: str) -> dict[str, Any]:
                 "pasta": grupo["pasta"],
                 "titulo": grupo["titulo"],
                 "fase": grupo["fase"],
+                "rotulo": grupo.get("rotulo", grupo["titulo"]),
                 "edicoes": edicoes,
             }
         )
@@ -254,24 +269,32 @@ def build_catalog() -> dict[str, Any]:
 # Regras de nomenclatura para upload
 # =============================================================================
 def resolve_file_destinations(
-    vestibular: str, ano: str, fase: str, prefixo_usp: str = "FEVEST"
+    vestibular: str,
+    ano: str,
+    fase: str = "1",
+    serie: str = "1",
 ) -> dict[str, Any]:
     """Calcula a pasta de destino e os nomes padronizados de prova e gabarito."""
     vestibular_clean = vestibular.strip()
     ano_clean = str(ano).strip()
     fase_clean = str(fase).strip()
+    serie_clean = str(serie).strip()
 
-    if vestibular_clean == "AFA":
-        dest_folder = ROOT_DIR / "AFA"
-        prova_name = f"AFA_{ano_clean}.pdf"
-        gabarito_name = f"AFA_{ano_clean}_gab.pdf"
+    if vestibular_clean in ("AFA", "ENEM"):
+        dest_folder = ROOT_DIR / vestibular_clean
+        prova_name = f"{vestibular_clean}_{ano_clean}.pdf"
+        gabarito_name = f"{vestibular_clean}_{ano_clean}_gab.pdf"
+    elif vestibular_clean in ("PROVÃO", "PROVAO"):
+        dest_folder = ROOT_DIR / vestibular_clean / f"{serie_clean}ª Série"
+        prova_name = f"PROVAO_{ano_clean}_{serie_clean}Serie.pdf"
+        gabarito_name = f"PROVAO_{ano_clean}_{serie_clean}Serie_gab.pdf"
     else:
         phase_folder_name = "1ª Fase" if fase_clean == "1" else "2ª Fase"
         dest_folder = ROOT_DIR / vestibular_clean / phase_folder_name
         suffix = "1Fase" if fase_clean == "1" else "2Fase"
 
         if vestibular_clean == "USP":
-            prefix = prefixo_usp if fase_clean == "1" else "FUVEST"
+            prefix = "FEVEST" if fase_clean == "1" else "FUVEST"
         else:
             prefix = vestibular_clean
 
@@ -291,17 +314,24 @@ def validate_upload_params(data: dict[str, Any]) -> tuple[str, str, str, str]:
     vestibular = str(data.get("vestibular", "")).strip()
     ano = str(data.get("ano", "")).strip()
     fase = str(data.get("fase", "1")).strip()
-    prefixo_usp = str(data.get("prefixo_usp", "FEVEST")).strip().upper()
+    serie = str(data.get("serie", "1")).strip()
 
     if vestibular not in get_vestibulares():
         raise ValueError("Vestibular inválido.")
     if not re.fullmatch(r"\d{4}", ano):
         raise ValueError("Informe um ano com 4 dígitos.")
-    if fase not in {"1", "2"}:
-        raise ValueError("Fase inválida.")
-    if prefixo_usp not in {"FEVEST", "FUVEST"}:
-        raise ValueError("Prefixo USP inválido.")
-    return vestibular, ano, fase, prefixo_usp
+
+    if vestibular in ("AFA", "ENEM"):
+        fase = "unica"
+    elif vestibular in ("PROVÃO", "PROVAO"):
+        if serie not in {"1", "2", "3"}:
+            raise ValueError("Série inválida para o Provão (escolha 1ª, 2ª ou 3ª Série).")
+        fase = f"{serie}_serie"
+    else:
+        if fase not in {"1", "2"}:
+            raise ValueError("Fase inválida.")
+
+    return vestibular, ano, fase, serie
 
 
 def decode_pdf(document: dict[str, Any] | None) -> bytes | None:
@@ -524,11 +554,11 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
 
     def _handle_preview(self, data: dict[str, Any]) -> None:
         try:
-            vestibular, ano, fase, prefixo_usp = validate_upload_params(data)
+            vestibular, ano, fase, serie = validate_upload_params(data)
         except ValueError as exc:
             self._send_json(400, {"error": str(exc)})
             return
-        destino = resolve_file_destinations(vestibular, ano, fase, prefixo_usp)
+        destino = resolve_file_destinations(vestibular, ano, fase, serie)
         self._send_json(
             200,
             {
@@ -540,7 +570,7 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
 
     def _handle_upload(self, data: dict[str, Any]) -> None:
         try:
-            vestibular, ano, fase, prefixo_usp = validate_upload_params(data)
+            vestibular, ano, fase, serie = validate_upload_params(data)
             documentos = {
                 "prova_name": decode_pdf(data.get("prova")),
                 "gabarito_name": decode_pdf(data.get("gabarito")),
@@ -553,7 +583,7 @@ class VestibularesHandler(http.server.SimpleHTTPRequestHandler):
             self._send_json(400, {"error": "Selecione ao menos um PDF (prova ou gabarito)."})
             return
 
-        destino = resolve_file_destinations(vestibular, ano, fase, prefixo_usp)
+        destino = resolve_file_destinations(vestibular, ano, fase, serie)
         dest_path: Path = destino["dest_path"]
 
         try:
