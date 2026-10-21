@@ -175,7 +175,7 @@ def classify_file(path: Path) -> tuple[str, int, str | None, str]:
     """
     Interpreta o nome do arquivo.
     Retorna (chave_da_edicao, ano, semestre, tipo_documento).
-    Arquivos fora do padrão viram uma edição própria do tipo "prova".
+    Arquivos fora do padrão viram uma edição própria.
     """
     match = FILE_PATTERN.match(path.stem)
     if match:
@@ -185,7 +185,10 @@ def classify_file(path: Path) -> tuple[str, int, str | None, str]:
         return f"{ano}-{semestre or ''}", ano, semestre, tipo
 
     year = YEAR_PATTERN.search(path.stem)
-    return f"x-{path.stem}", int(year.group(0)) if year else 0, None, "prova"
+    ano = int(year.group(0)) if year else 0
+    stem_lower = path.stem.lower()
+    tipo = "gabarito" if "_gab" in stem_lower else ("resolucao" if "_resol" in stem_lower else "prova")
+    return f"x-{path.stem}", ano, None, tipo
 
 
 def build_vestibular_catalog(nome: str) -> dict[str, Any]:
