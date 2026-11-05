@@ -4,7 +4,7 @@
 # VPS: acervo.diogo.mat.br | Diretório: /var/www/provas-vestibulares
 #
 # COMO EXECUTAR NA VPS PARA ATUALIZAR:
-#   cd /var/www/provas-vestibulares && ./deploy.sh
+#   cd /var/www/provas-vestibulares && ./dev/deploy.sh
 # ==============================================================================
 
 set -euo pipefail
@@ -13,7 +13,7 @@ TARGET_DIR="/var/www/provas-vestibulares"
 if [ -d "${TARGET_DIR}" ]; then
     APP_DIR="${TARGET_DIR}"
 else
-    APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 fi
 
 cd "${APP_DIR}"
@@ -106,11 +106,6 @@ chmod -R 775 media staticfiles 2>/dev/null || true
 # ------------------------------------------------------------------------------
 echo ""
 echo "[6/6] Reiniciando serviço 'provas-vestibulares' e recarregando Caddy..."
-if [ -f "dev/provas-vestibulares.service" ]; then
-    sudo cp dev/provas-vestibulares.service /etc/systemd/system/provas-vestibulares.service 2>/dev/null || cp dev/provas-vestibulares.service /etc/systemd/system/provas-vestibulares.service 2>/dev/null || true
-    sudo systemctl daemon-reload 2>/dev/null || true
-fi
-
 sudo systemctl restart provas-vestibulares
 
 if systemctl is-active --quiet caddy 2>/dev/null; then

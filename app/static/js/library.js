@@ -124,7 +124,7 @@
     if (!elFilters) return;
     elFilters.innerHTML = '';
 
-    const chipsWrapper = h('div', { style: { display: 'flex', gap: '0.4rem', flexWrap: 'wrap' } });
+    const chipsWrapper = h('div', { class: 'filters-chips' });
 
     // Opção "Todas"
     const chipTodas = h(

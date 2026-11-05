@@ -60,7 +60,9 @@
   --normal: 220ms;
 
   /* Layout */
-  --sidebar-w: 248px;
+  --sidebar-w: 256px;
+  --content-max-w: 1440px;
+  --touch-target: 44px;
 
   /* --------------------------- Mapeamento Pico CSS --------------------------- */
   --pico-font-family: var(--font);

@@ -57,18 +57,11 @@ provas-vestibulares/
 │   ├── UNICAMP/                    # 1ª Fase e 2ª Fase
 │   └── USP/                        # 1ª Fase (FEVEST) e 2ª Fase (FUVEST)
 │
-├── dev/                            # Arquivos e Scripts de Desenvolvimento / VPS
-│   ├── Caddyfile                   # Caddyfile completo atualizado da VPS
-│   ├── caddy-acervo.Caddyfile      # Bloco isolado do Caddy para acervo.diogo.mat.br
-│   ├── provas-vestibulares.service # Arquivo de serviço Systemd para Gunicorn
-│   ├── start_app.ps1               # Launcher local PowerShell
-│   ├── start_app.bat               # Launcher local duplo-clique no Windows
-│   ├── sync.ps1                    # Script PowerShell de sincronização Git
-│   ├── sync.bat                    # Atalho duplo-clique para sync.ps1
-│   └── server_legacy.py            # Servidor HTTP simples de protótipo (legado)
+├── dev/                            # Scripts de Inicialização e Deploy
+│   ├── start_app.ps1               # Launcher local automatizado (PowerShell)
+│   └── deploy.sh                   # Script de deploy e atualização forçada na VPS
 │
 ├── staticfiles/                    # Arquivos estáticos coletados para produção
-├── deploy.sh                       # Script de deploy e atualização forçada na VPS
 ├── manage.py                       # Utilitário CLI do Django
 ├── requirements.txt                # Dependências Python
 ├── .env.example                    # Exemplo de variáveis de ambiente
@@ -79,16 +72,20 @@ provas-vestibulares/
 
 ## 🚀 Como Executar em Desenvolvimento Local (Windows / PowerShell)
 
-### Opção 1: Atalho Rápido (Duplo-clique)
-Dê dois cliques no arquivo [`dev/start_app.bat`](./dev/start_app.bat). O script:
+### Opção 1: Inicializador Automatizado (Recomendado)
+Execute no PowerShell:
+```powershell
+.\dev\start_app.ps1
+```
+O script:
 1. Detecta ou cria o ambiente virtual `.venv`.
 2. Instala/atualiza as dependências de `requirements.txt`.
 3. Aplica as migrações do banco de dados SQLite.
 4. Inicializa o índice de busca dos PDFs caso ainda não exista.
 5. Inicia o servidor de desenvolvimento Django na porta 8000.
-6. Abre o navegador na interface local.
+6. Abre o navegador automaticamente na interface local.
 
-### Opção 2: Linha de Comando (PowerShell)
+### Opção 2: Linha de Comando Manual (PowerShell)
 ```powershell
 # Ativar o ambiente virtual
 .\.venv\Scripts\Activate.ps1
@@ -149,9 +146,9 @@ cd /var/www/provas-vestibulares && source .venv/bin/activate && python manage.py
 ### 3. Atualizações Futuras
 Sempre que atualizar o repositório remoto, basta rodar na VPS:
 ```bash
-cd /var/www/provas-vestibulares && ./deploy.sh
+cd /var/www/provas-vestibulares && ./dev/deploy.sh
 ```
-O `deploy.sh` força a sincronização com o repositório remoto sem alterar arquivos locais de produção (banco, mídias e `.env`), reinicia o Gunicorn e recarrega o Caddy.
+O `dev/deploy.sh` força a sincronização com o repositório remoto sem alterar arquivos locais de produção (banco, mídias e `.env`), reinicia o Gunicorn e recarrega o Caddy.
 
 ---
 
