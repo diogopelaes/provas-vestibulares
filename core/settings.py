@@ -18,11 +18,14 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Carregamento simplificado de variáveis de ambiente do .env
 ENV_FILE = BASE_DIR / ".env"
 if ENV_FILE.is_file():
-    for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
-        line = line.strip()
-        if line and not line.startswith("#") and "=" in line:
-            key, val = line.split("=", 1)
-            os.environ.setdefault(key.strip(), val.strip().strip("'\""))
+    try:
+        for line in ENV_FILE.read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#") and "=" in line:
+                key, val = line.split("=", 1)
+                os.environ.setdefault(key.strip(), val.strip().strip("'\""))
+    except Exception:
+        pass
 
 # Segurança
 SECRET_KEY = os.environ.get(

@@ -92,21 +92,34 @@ if id "www-data" &>/dev/null; then
     sudo chown -R www-data:www-data media staticfiles 2>/dev/null || chown -R www-data:www-data media staticfiles 2>/dev/null || true
     [ -f "db.sqlite3" ] && (sudo chown www-data:www-data db.sqlite3 2>/dev/null || chown www-data:www-data db.sqlite3 2>/dev/null || true)
     [ -f "app/.search_cache.db" ] && (sudo chown www-data:www-data app/.search_cache.db 2>/dev/null || chown www-data:www-data app/.search_cache.db 2>/dev/null || true)
+    [ -f ".env" ] && (sudo chown www-data:www-data .env 2>/dev/null || chown www-data:www-data .env 2>/dev/null || true)
+    sudo chgrp www-data "${APP_DIR}" "${APP_DIR}/app" 2>/dev/null || true
+    sudo chmod g+rwx "${APP_DIR}" "${APP_DIR}/app" 2>/dev/null || true
 fi
 chmod -R 775 media staticfiles 2>/dev/null || true
 [ -f "db.sqlite3" ] && chmod 664 db.sqlite3 2>/dev/null || true
 [ -f "app/.search_cache.db" ] && chmod 664 app/.search_cache.db 2>/dev/null || true
+[ -f ".env" ] && chmod 644 .env 2>/dev/null || true
 
 # ------------------------------------------------------------------------------
-# 6. Reiniciar Serviços (NÃO altera Caddyfile nem .service)
+# 6. Reiniciar Serviços
 # ------------------------------------------------------------------------------
 echo ""
 echo "[6/6] Reiniciando serviço 'provas-vestibulares' e recarregando Caddy..."
-sudo systemctl restart provas-vestibulares 2>/dev/null || systemctl restart provas-vestibulares 2>/dev/null || true
+if [ -f "dev/provas-vestibulares.service" ]; then
+    sudo cp dev/provas-vestibulares.service /etc/systemd/system/provas-vestibulares.service 2>/dev/null || cp dev/provas-vestibulares.service /etc/systemd/system/provas-vestibulares.service 2>/dev/null || true
+    sudo systemctl daemon-reload 2>/dev/null || true
+fi
+
+sudo systemctl restart provas-vestibulares
 
 if systemctl is-active --quiet caddy 2>/dev/null; then
     sudo systemctl reload caddy 2>/dev/null || systemctl reload caddy 2>/dev/null || true
 fi
+
+echo ""
+echo " -> Status do serviço provas-vestibulares:"
+sudo systemctl status provas-vestibulares --no-pager
 
 echo ""
 echo "=================================================================="

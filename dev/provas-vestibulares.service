@@ -3,7 +3,7 @@ Description=Gunicorn daemon for Provas de Vestibulares (acervo.diogo.mat.br)
 After=network.target
 
 [Service]
-Type=notify
+Type=simple
 User=www-data
 Group=www-data
 WorkingDirectory=/var/www/provas-vestibulares
@@ -11,8 +11,8 @@ EnvironmentFile=-/var/www/provas-vestibulares/.env
 ExecStart=/var/www/provas-vestibulares/.venv/bin/gunicorn \
           --workers 3 \
           --bind 127.0.0.1:9003 \
-          --access-logfile /var/log/provas-vestibulares.access.log \
-          --error-logfile /var/log/provas-vestibulares.error.log \
+          --access-logfile - \
+          --error-logfile - \
           core.wsgi:application
 ExecReload=/bin/kill -s HUP $MAINPID
 KillMode=mixed
