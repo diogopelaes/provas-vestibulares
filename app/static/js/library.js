@@ -333,11 +333,13 @@
       const atual = catalogo.vestibulares.find((v) => v.nome === vestibularAtivo);
       elPageEyebrow.textContent = 'Vestibular Selecionado';
       elPageTitle.textContent = vestibularAtivo;
+      elPageTitle.style.color = colorFor(vestibularAtivo);
       const count = atual ? atual.total_edicoes : 0;
       elPageSub.textContent = `${plural(count, 'edição arquivada', 'edições arquivadas')} (${atual.ano_min || '—'} a ${atual.ano_max || '—'})`;
     } else {
       elPageEyebrow.textContent = 'Acervo Completo';
       elPageTitle.textContent = 'Vestibulares';
+      elPageTitle.style.color = '';
       const tot = catalogo.totais;
       elPageSub.textContent = `${tot.edicoes} edições em ${tot.vestibulares} instituições (${tot.ano_min || '—'} a ${tot.ano_max || '—'})`;
     }
@@ -386,16 +388,26 @@
         const vestHead = h(
           'header',
           { class: 'vest-head' },
-          h('button', {
-            type: 'button',
-            class: 'vest-badge',
-            title: `Filtrar apenas ${v.nome}`,
-            onclick: () => setVestibular(v.nome),
-          }, v.nome.slice(0, 4)),
           h(
             'div',
             null,
-            h('h2', { class: 'vest-name' }, v.nome),
+            h(
+              'h2',
+              {
+                class: 'vest-name',
+                role: 'button',
+                tabindex: '0',
+                title: `Filtrar apenas ${v.nome}`,
+                onclick: () => setVestibular(v.nome),
+                onkeydown: (e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    setVestibular(v.nome);
+                  }
+                },
+              },
+              v.nome
+            ),
             h('p', { class: 'vest-meta' }, `${plural(v.total_edicoes, 'edição arquivada', 'edições arquivadas')} (${v.ano_min || '—'} a ${v.ano_max || '—'})`)
           ),
           h('button', {
