@@ -18,9 +18,9 @@ param (
 
 $ErrorActionPreference = "Stop"
 
-$rootDir = $PSScriptRoot
+$rootDir = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
+$managePy = Join-Path $rootDir "manage.py"
 $appDir = Join-Path $rootDir "app"
-$serverScript = Join-Path $appDir "server.py"
 $venvDir = Join-Path $rootDir ".venv"
 $venvPython = Join-Path $venvDir "Scripts\python.exe"
 
@@ -114,11 +114,10 @@ if (Test-Path $reqPath) {
 # 3. Verificar / Inicializar Índice de Busca nos PDFs
 # -----------------------------------------------------------------------------
 $dbPath = Join-Path $appDir ".search_cache.db"
-$buscaScript = Join-Path $appDir "busca.py"
 if (-not (Test-Path $dbPath)) {
     Write-Host "[Busca] Banco de busca não encontrado. Criando índice inicial dos PDFs..." -ForegroundColor Cyan
     try {
-        & $venvPython $buscaScript --indexar
+        & $venvPython $managePy sync_search
     } catch {
         Write-Host "[Aviso] Erro na indexação inicial: $_" -ForegroundColor Yellow
     }
@@ -184,7 +183,8 @@ Write-Host '==========================================================' -Foregro
 Write-Host 'URL Local: $url' -ForegroundColor Green
 Write-Host 'Pressione Ctrl+C para encerrar o servidor local.`n' -ForegroundColor Gray
 try {
-    & '$venvPython' '$serverScript' $porta
+    & '$venvPython' '$managePy' migrate --noinput
+    & '$venvPython' '$managePy' runserver "127.0.0.1:$porta"
 } catch {
     Write-Host "`n[Erro no Servidor] `$_" -ForegroundColor Red
 } finally {

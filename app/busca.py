@@ -58,6 +58,7 @@ except ImportError:
 
 APP_DIR = Path(__file__).resolve().parent
 ROOT_DIR = APP_DIR.parent
+MEDIA_DIR = ROOT_DIR / "media" if (ROOT_DIR / "media").is_dir() else ROOT_DIR
 DB_PATH = APP_DIR / ".search_cache.db"
 
 IGNORED_DIRS = {".git", ".vscode", ".venv", "__pycache__", "app", "build", "dist"}
@@ -231,7 +232,7 @@ def extract_snippets(
 # =============================================================================
 # Classificação de Arquivos e Metadados
 # =============================================================================
-def get_vestibulares(root_dir: Path = ROOT_DIR) -> list[str]:
+def get_vestibulares(root_dir: Path = MEDIA_DIR) -> list[str]:
     """Retorna os nomes das pastas de vestibulares na raiz."""
     return sorted(
         d.name
@@ -349,7 +350,7 @@ def init_db(db_path: Path = DB_PATH) -> sqlite3.Connection:
 
 
 def sync_index(
-    root_dir: Path = ROOT_DIR,
+    root_dir: Path = MEDIA_DIR,
     db_path: Path = DB_PATH,
     force: bool = False,
     max_workers: int = 4,
@@ -450,7 +451,7 @@ def sync_index(
     }
 
 
-def index_single_file(pdf_path: Path, root_dir: Path = ROOT_DIR, db_path: Path = DB_PATH) -> bool:
+def index_single_file(pdf_path: Path, root_dir: Path = MEDIA_DIR, db_path: Path = DB_PATH) -> bool:
     """Indexa ou atualiza um único arquivo PDF no banco de dados de busca."""
     if not pdf_path.is_file():
         return False
@@ -496,7 +497,7 @@ def index_single_file(pdf_path: Path, root_dir: Path = ROOT_DIR, db_path: Path =
 def buscar(
     query: str,
     options: dict[str, Any] | None = None,
-    root_dir: Path = ROOT_DIR,
+    root_dir: Path = MEDIA_DIR,
     db_path: Path = DB_PATH,
 ) -> dict[str, Any]:
     """
@@ -655,7 +656,7 @@ def buscar(
         ano_str = str(ano) if ano else "Outros"
         resumo_anos[ano_str] = resumo_anos.get(ano_str, 0) + ocorrencias
 
-        url_arquivo = f"/arquivos/{urllib.parse.quote(caminho)}#page={pagina}"
+        url_arquivo = f"/media/{urllib.parse.quote(caminho)}#page={pagina}"
         nome_arquivo = Path(caminho).name
 
         resultados.append(
@@ -698,7 +699,7 @@ def buscar(
     }
 
 
-def get_opcoes_busca(root_dir: Path = ROOT_DIR, db_path: Path = DB_PATH) -> dict[str, Any]:
+def get_opcoes_busca(root_dir: Path = MEDIA_DIR, db_path: Path = DB_PATH) -> dict[str, Any]:
     """Retorna lista de vestibulares, anos e status do índice para preencher filtros."""
     conn = init_db(db_path)
     cur = conn.cursor()

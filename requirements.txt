@@ -1,5 +1,10 @@
-# Motor principal de alta performance para leitura e indexação de PDFs (fitz)
-PyMuPDF>=1.24.0
+# Backend Django & Django REST Framework
+Django>=5.1,<7.0
+djangorestframework>=3.15.0
 
-# Motor alternativo / fallback puro em Python para leitura de PDFs
+# Servidor de Produção WSGI
+gunicorn>=22.0.0
+
+# Leitura e Indexação de Alta Performance para PDFs
+PyMuPDF>=1.24.0
 pypdf>=4.0.0

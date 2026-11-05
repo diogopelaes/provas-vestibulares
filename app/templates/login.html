@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Entrar · Acervo de Vestibulares</title>
+
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%2323272e'/%3E%3Cpath d='M11 8h7l4 4v12H11z' fill='none' stroke='%238fb3a6' stroke-width='2' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+  <!-- Framework CSS: Pico CSS v2 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+
+  <!-- Tipografia -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Estilos do projeto -->
+  <link rel="stylesheet" href="/static/css/tokens.css?v={{v:css/tokens.css}}">
+  <link rel="stylesheet" href="/static/css/base.css?v={{v:css/base.css}}">
+  <link rel="stylesheet" href="/static/css/components.css?v={{v:css/components.css}}">
+
+  <style>
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      margin: 0;
+      background: var(--bg-canvas, #161b22);
+      padding: 1.5rem;
+    }
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background: var(--bg-surface, #1e2227);
+      border: 1px solid var(--line-subtle, #2d333b);
+      border-radius: var(--radius-lg, 12px);
+      padding: 2.2rem 2rem;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+    }
+
+    .login-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+      margin-bottom: 1.75rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-mark {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-canvas, #161b22);
+      border: 1px solid var(--line-subtle, #2d333b);
+      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--brand-accent, #539bf5);
+    }
+
+    .login-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin: 0 0 0.25rem 0;
+      color: var(--text-primary, #f0f6fc);
+    }
+
+    .login-subtitle {
+      font-size: 0.85rem;
+      color: var(--text-muted, #768390);
+      margin: 0;
+    }
+
+    .login-alert {
+      padding: 0.75rem 1rem;
+      background: rgba(248, 81, 73, 0.12);
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      border-radius: var(--radius-sm, 6px);
+      color: #f85149;
+      font-size: 0.85rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    .form-label {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-secondary, #adbac7);
+      margin-bottom: 0.4rem;
+    }
+
+    .form-input {
+      width: 100%;
+      height: 42px;
+      padding: 0 0.85rem;
+      background: var(--bg-canvas, #161b22);
+      border: 1px solid var(--line-subtle, #2d333b);
+      border-radius: var(--radius-sm, 6px);
+      color: var(--text-primary, #f0f6fc);
+      font-size: 0.95rem;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+      box-sizing: border-box;
+    }
+
+    .form-input:focus {
+      outline: none;
+      border-color: var(--brand-accent, #539bf5);
+      box-shadow: 0 0 0 3px rgba(83, 155, 245, 0.2);
+    }
+
+    .btn-submit {
+      width: 100%;
+      height: 42px;
+      margin-top: 0.5rem;
+      font-weight: 600;
+    }
+
+    .login-back {
+      display: block;
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--text-muted, #768390);
+      text-decoration: none;
+      transition: color 0.15s ease;
+    }
+
+    .login-back:hover {
+      color: var(--text-primary, #f0f6fc);
+    }
+  </style>
+</head>
+<body>
+
+  <main class="login-card">
+    <a href="/" class="login-brand">
+      <span class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M4 19.5V6a2 2 0 0 1 2-2h12v15H6.5A2.5 2.5 0 0 0 4 21.5"/><path d="M18 19v3H6.5"/><path d="M8 8h6M8 11h4"/></svg>
+      </span>
+      <div>
+        <h1 class="login-title">Acesso Restrito</h1>
+        <p class="login-subtitle">Gerenciamento do Acervo de Provas</p>
+      </div>
+    </a>
+
+    {% if error_msg %}
+    <div class="login-alert" role="alert">
+      {{ error_msg }}
+    </div>
+    {% endif %}
+
+    <form method="post" action="/login/" novalidate>
+      {% csrf_token %}
+
+      <div class="form-group">
+        <label for="id_username" class="form-label">Usuário</label>
+        <input type="text" name="username" id="id_username" class="form-input" required autofocus autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label for="id_password" class="form-label">Senha</label>
+        <input type="password" name="password" id="id_password" class="form-input" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-submit">
+        Entrar
+      </button>
+
+      <a href="/" class="login-back">
+        ← Voltar para o acervo público
+      </a>
+    </form>
+  </main>
+
+</body>
+</html>
+

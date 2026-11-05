@@ -102,7 +102,9 @@
     if (elements.indexStatusMsg) elements.indexStatusMsg.textContent = 'Processando páginas dos PDFs e atualizando índice local…';
 
     try {
-      const resp = await fetch('/api/busca/sync', { method: 'POST' });
+      const csrf = (window.App && window.App.getCookie) ? window.App.getCookie('csrftoken') : null;
+      const headers = csrf ? { 'X-CSRFToken': csrf } : {};
+      const resp = await fetch('/api/busca/sync', { method: 'POST', headers });
       if (!resp.ok) throw new Error('Falha ao sincronizar índice.');
       const resData = await resp.json();
       toast(`Índice atualizado! ${resData.novos_ou_atualizados || 0} arquivos processados.`, { tipo: 'success' });
@@ -280,9 +282,12 @@
     renderizarSkeletons();
 
     try {
+      const csrf = (window.App && window.App.getCookie) ? window.App.getCookie('csrftoken') : null;
+      const headers = { 'Content-Type': 'application/json' };
+      if (csrf) headers['X-CSRFToken'] = csrf;
       const response = await fetch('/api/busca', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify(payload),
       });
 

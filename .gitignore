@@ -1,5 +1,5 @@
 # ==========================================
-# Python & Cache
+# Python & Bytecode
 # ==========================================
 __pycache__/
 *.py[cod]
@@ -24,7 +24,26 @@ venv.bak/
 !.env.example
 
 # ==========================================
-# IDEs e Editores de Código
+# Django & Arquivos Gerados em Produção
+# ==========================================
+db.sqlite3
+db.sqlite3-journal
+*.sqlite3
+*.db
+app/.search_cache.db
+staticfiles/
+*.sock
+
+# ==========================================
+# Logs, Backups e Temporários
+# ==========================================
+*.log
+*.tmp
+*.temp
+*.bak
+
+# ==========================================
+# IDEs e Editores
 # ==========================================
 .vscode/
 .idea/
@@ -33,14 +52,7 @@ venv.bak/
 *~
 
 # ==========================================
-# Assistentes de IA e Ferramentas
-# ==========================================
-.antigravityignore
-.tabignore
-.cursor/
-
-# ==========================================
-# Arquivos do Sistema (Windows / macOS)
+# Arquivos de Sistema (Windows / macOS)
 # ==========================================
 Thumbs.db
 ehthumbs.db
@@ -51,15 +63,8 @@ desktop.ini
 .LSOverride
 
 # ==========================================
-# Logs, Backups e Arquivos Temporários
+# Assistentes de IA
 # ==========================================
-*.log
-*.tmp
-*.temp
-*.bak
-
-# ==========================================
-# Bancos de Dados Locais
-# ==========================================
-*.sqlite3
-*.db
+.antigravityignore
+.tabignore
+.cursor/

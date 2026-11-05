@@ -1,4 +1,4 @@
-﻿<#
+<#
 ===============================================================================
 ARQUIVO: sync.ps1
 CAMADA: Automação / Sincronização Git (PowerShell)
@@ -32,7 +32,7 @@ $OutputEncoding = [System.Text.UTF8Encoding]::new()
 [Console]::OutputEncoding = [System.Text.UTF8Encoding]::new()
 [Console]::InputEncoding = [System.Text.UTF8Encoding]::new()
 
-$repoRoot = $PSScriptRoot
+$repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 Set-Location -Path $repoRoot
 
 Write-Host "==========================================================" -ForegroundColor Cyan

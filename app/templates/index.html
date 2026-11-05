@@ -16,7 +16,7 @@ FRAMEWORK CSS:
   - Pico CSS v2 (tema escuro) como base, com tokens sobrescritos em static/css/tokens.css
     para um visual de baixo contraste.
 CACHE BUSTING:
-  - Marcadores {{v:caminho}} são substituídos pelo servidor (server.py) pelo mtime do arquivo.
+  - Marcadores de versão são substituídos pelo servidor pelo mtime do arquivo.
 ===============================================================================
 -->
 <!DOCTYPE html>
@@ -97,10 +97,21 @@ CACHE BUSTING:
             <span class="btn-label">Buscar nos PDFs</span>
           </a>
 
+          {% if user.is_authenticated %}
           <button class="btn btn-primary btn-add" id="btn-add" type="button" title="Adicionar prova (N)">
             <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
             <span class="btn-label">Adicionar prova</span>
           </button>
+          <a class="btn btn-ghost" href="/logout" title="Sair ({{ user.username }})" style="text-decoration: none;">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span class="btn-label">Sair</span>
+          </a>
+          {% else %}
+          <a class="btn btn-ghost" href="/login" title="Acesso administrativo" style="text-decoration: none;">
+            <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            <span class="btn-label">Entrar</span>
+          </a>
+          {% endif %}
         </div>
       </header>
 
@@ -110,6 +121,7 @@ CACHE BUSTING:
     </main>
   </div>
 
+  {% if user.is_authenticated %}
   <!-- ============================== MODAL DE UPLOAD ============================== -->
   <dialog id="upload-dialog" class="upload-dialog" aria-labelledby="upload-title">
     <article class="dialog-card">
@@ -206,6 +218,7 @@ CACHE BUSTING:
       </form>
     </article>
   </dialog>
+  {% endif %}
 
   <div class="toasts" id="toasts" aria-live="polite" aria-atomic="false"></div>
 
