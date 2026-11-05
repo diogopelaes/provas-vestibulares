@@ -1,38 +1,17 @@
-# ==============================================================================
-# Bloco Caddyfile para acervo.diogo.mat.br
-# Adicione este bloco ao seu /etc/caddy/Caddyfile na VPS
-# ==============================================================================
-
 acervo.diogo.mat.br {
     encode zstd gzip
 
-    # Arquivos estáticos coletados pelo Django
     handle_path /static/* {
         root * /var/www/provas-vestibulares/staticfiles
         file_server
     }
 
-    # Arquivos de mídia (PDFs do acervo em media/)
     handle_path /media/* {
         root * /var/www/provas-vestibulares/media
         file_server
     }
 
-    # Compatibilidade direta para links legados /arquivos/*
-    handle_path /arquivos/* {
-        root * /var/www/provas-vestibulares/media
-        file_server
-    }
-
-    # Proxy reverso para Gunicorn (Porta 9003)
     handle {
-        reverse_proxy localhost:9003 {
-            header_down Cache-Control "no-cache, must-revalidate"
-        }
-    }
-
-    log {
-        output file /var/log/caddy/acervo.access.log
+        reverse_proxy localhost:9003
     }
 }
-

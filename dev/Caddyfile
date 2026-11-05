@@ -1,0 +1,164 @@
+# ==============================================================================
+# Caddyfile Consolidado da VPS
+# ==============================================================================
+
+# Acervo de Provas de Vestibulares
+acervo.diogo.mat.br {
+    encode zstd gzip
+
+    handle_path /static/* {
+        root * /var/www/provas-vestibulares/staticfiles
+        file_server
+    }
+
+    handle_path /media/* {
+        root * /var/www/provas-vestibulares/media
+        file_server
+    }
+
+    handle {
+        reverse_proxy localhost:9003
+    }
+}
+
+# CEMEP Digital - Caddy Configuration
+app.cemep.net.br {
+    root * /var/www/cemep-digital/frontend/dist
+    encode zstd gzip
+
+    # Proxy para API e Admin (necessário para chamadas relativas)
+    handle /api/* {
+        reverse_proxy localhost:8000
+    }
+
+    handle /admin* {
+        reverse_proxy localhost:8000
+    }
+
+    # SPA Routing
+    handle {
+        file_server
+        try_files {path} /index.html
+    }
+}
+
+app.diogo.mat.br {
+    root * /var/www/cemep-digital/frontend/dist
+    encode zstd gzip
+
+    # Proxy para API e Admin (necessário para chamadas relativas)
+    handle /api/* {
+        reverse_proxy localhost:8000
+    }
+
+    handle /admin* {
+        reverse_proxy localhost:8000
+    }
+
+    # SPA Routing
+    handle {
+        file_server
+        try_files {path} /index.html
+    }
+}
+
+api.cemep.net.br {
+    # Servir arquivos estáticos do Django
+    handle_path /static/* {
+        root * /var/www/cemep-digital/backend/staticfiles
+        file_server
+    }
+
+    # Todo o resto vai para o Gunicorn
+    handle {
+        reverse_proxy localhost:8000
+    }
+
+    encode zstd gzip
+}
+
+api.diogo.mat.br {
+    # Servir arquivos estáticos do Django
+    handle_path /static/* {
+        root * /var/www/cemep-digital/backend/staticfiles
+        file_server
+    }
+
+    # Todo o resto vai para o Gunicorn
+    handle {
+        reverse_proxy localhost:8000
+    }
+
+    encode zstd gzip
+}
+
+# Vestibulinho Paulínia (ETEP) Section
+vestibulinho.etep.com.br {
+    encode zstd gzip
+
+    handle_path /static/* {
+        root * /var/www/vestibulinho-paulinia/staticfiles
+        file_server
+    }
+
+    handle_path /media/* {
+        root * /var/www/vestibulinho-paulinia/media
+        file_server
+    }
+
+    handle {
+        reverse_proxy localhost:9002 {
+            header_down Cache-Control "no-cache, must-revalidate"
+        }
+    }
+
+    log {
+        output file /var/log/caddy/vestibulinho.access.log
+    }
+}
+
+# StudyTask Section
+studytask.com.br {
+    encode zstd gzip
+
+    # Servir arquivos estáticos do Django
+    handle_path /static/* {
+        root * /var/www/StudyTask/staticfiles
+        file_server
+    }
+
+    # Proxy para o Gunicorn via Unix Socket
+    handle {
+        reverse_proxy unix//var/www/StudyTask/studytask.sock {
+            # Força o navegador a validar se o HTML mudou antes de usar cache
+            header_down Cache-Control "no-cache, must-revalidate"
+        }
+    }
+
+    log {
+        output file /var/log/caddy/studytask.access.log
+    }
+}
+
+# Mentis (PsicoApp) Section
+mentis.diogo.mat.br {
+    encode zstd gzip
+
+    # Servir arquivos estáticos do Django
+    handle_path /static/* {
+        root * /var/www/psicoapp/staticfiles
+        file_server
+    }
+
+    # Proxy para o Uvicorn na porta 9001
+    handle {
+        reverse_proxy localhost:9001 {
+            header_down Cache-Control "no-cache, must-revalidate"
+        }
+    }
+
+    log {
+        output file /var/log/caddy/mentis.access.log
+    }
+}
+

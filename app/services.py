@@ -306,14 +306,16 @@ def save_uploaded_files(
         caminho_rel = f"{destinos['dest_folder']}/{destinos['prova_name']}"
         saved_files.append(caminho_rel)
 
-        RegistroUpload.objects.create(
-            usuario=user if user and user.is_authenticated else None,
-            vestibular=vestibular,
-            ano=int(ano),
-            fase=fase if vestibular not in ("PROVÃO", "PROVAO") else f"{serie}ª Série",
-            nome_arquivo=destinos["prova_name"],
+        RegistroUpload.objects.update_or_create(
             caminho_relativo=caminho_rel,
-            tamanho_bytes=len(raw_bytes),
+            defaults={
+                "usuario": user if user and user.is_authenticated else None,
+                "vestibular": vestibular,
+                "ano": int(ano),
+                "fase": fase if vestibular not in ("PROVÃO", "PROVAO") else f"{serie}ª Série",
+                "nome_arquivo": destinos["prova_name"],
+                "tamanho_bytes": len(raw_bytes),
+            },
         )
 
         _index_file_safe(target)
@@ -327,14 +329,16 @@ def save_uploaded_files(
         caminho_rel = f"{destinos['dest_folder']}/{destinos['gabarito_name']}"
         saved_files.append(caminho_rel)
 
-        RegistroUpload.objects.create(
-            usuario=user if user and user.is_authenticated else None,
-            vestibular=vestibular,
-            ano=int(ano),
-            fase=fase if vestibular not in ("PROVÃO", "PROVAO") else f"{serie}ª Série",
-            nome_arquivo=destinos["gabarito_name"],
+        RegistroUpload.objects.update_or_create(
             caminho_relativo=caminho_rel,
-            tamanho_bytes=len(raw_bytes),
+            defaults={
+                "usuario": user if user and user.is_authenticated else None,
+                "vestibular": vestibular,
+                "ano": int(ano),
+                "fase": fase if vestibular not in ("PROVÃO", "PROVAO") else f"{serie}ª Série",
+                "nome_arquivo": destinos["gabarito_name"],
+                "tamanho_bytes": len(raw_bytes),
+            },
         )
 
         _index_file_safe(target)

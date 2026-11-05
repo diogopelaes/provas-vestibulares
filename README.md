@@ -125,84 +125,33 @@ O painel administrativo completo também fica disponível em `/admin/`.
 
 ## 🌐 Deploy e Produção na VPS (acervo.diogo.mat.br)
 
-### 1. Clonar o Repositório na VPS
-Na sua VPS Linux (Ubuntu/Debian), clone o repositório no caminho padrão:
+### 1. Primeiro Deploy na VPS
+Como o Caddyfile e o serviço `provas-vestibulares.service` já estão configurados na VPS, execute na VPS:
 ```bash
-sudo mkdir -p /var/www/provas-vestibulares
-sudo chown -R $USER:$USER /var/www/provas-vestibulares
-git clone <URL_DO_REPOSITORIO> /var/www/provas-vestibulares
-cd /var/www/provas-vestibulares
+bash primeiro_deploy.sh
 ```
+O `primeiro_deploy.sh`:
+- Clona o repositório de `git@github.com:diogopelaes/provas-vestibulares.git` em `/var/www/provas-vestibulares`.
+- Cria o `.venv` e atualiza o `pip`.
+- Instala todas as dependências do `requirements.txt`.
+- Configura o `.env` de produção.
+- Executa migrações (`migrate`), coleta estáticos (`collectstatic`) e indexa os PDFs (`sync_search`).
+- Ajusta as permissões de arquivo para o `www-data`.
+- **NÃO altera o Caddyfile nem o arquivo .service**.
+- Reinicia o serviço `provas-vestibulares` e recarrega o Caddy.
 
-### 2. Configurar o Caddy
-O bloco Caddy para o domínio `acervo.diogo.mat.br` já está pronto em [`dev/caddy-acervo.Caddyfile`](./dev/caddy-acervo.Caddyfile) e no arquivo consolidado [`dev/Caddyfile`](./dev/Caddyfile):
-
-```caddy
-acervo.diogo.mat.br {
-    encode zstd gzip
-
-    handle_path /static/* {
-        root * /var/www/provas-vestibulares/staticfiles
-        file_server
-    }
-
-    handle_path /media/* {
-        root * /var/www/provas-vestibulares/media
-        file_server
-    }
-
-    handle_path /arquivos/* {
-        root * /var/www/provas-vestibulares/media
-        file_server
-    }
-
-    handle {
-        reverse_proxy localhost:9003 {
-            header_down Cache-Control "no-cache, must-revalidate"
-        }
-    }
-
-    log {
-        output file /var/log/caddy/acervo.access.log
-    }
-}
-```
-
-Adicione o bloco ao `/etc/caddy/Caddyfile` da sua VPS e recarregue:
+### 2. Criar o Usuário Administrador
+Para criar o seu usuário e poder enviar novas provas pela interface web:
 ```bash
-sudo caddy reload --config /etc/caddy/Caddyfile
+cd /var/www/provas-vestibulares && source .venv/bin/activate && python manage.py createsuperuser
 ```
 
-### 3. Configurar o Serviço Systemd
-Copie o arquivo de serviço para o sistema:
+### 3. Atualizações Futuras
+Sempre que atualizar o repositório remoto, basta rodar na VPS:
 ```bash
-sudo cp dev/provas-vestibulares.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable provas-vestibulares
+cd /var/www/provas-vestibulares && ./deploy.sh
 ```
-
-### 4. Executar o Script de Deploy
-Execute o script de automação:
-```bash
-chmod +x deploy.sh
-./deploy.sh
-```
-
-O `deploy.sh`:
-- Força a sincronização com o repositório remoto (`git fetch origin main && git reset --hard origin/main`).
-- Garante que nenhuma alteração local da VPS tente subir ou conflitar com o Git remoto.
-- Preserva a pasta `media/`, o arquivo `.env`, o banco de dados `db.sqlite3` e o cache de busca `app/.search_cache.db`.
-- Atualiza o `.venv` e dependências.
-- Executa migrações (`migrate`) e coleta estáticos (`collectstatic`).
-- Indexa novos PDFs adicionados.
-- Reinicia o serviço Gunicorn (`provas-vestibulares.service`) e recarrega o Caddy.
-
-### 5. Atualizações Futuras
-Sempre que fizer alterações no repositório remoto, basta rodar na VPS:
-```bash
-./deploy.sh
-```
-Todo o processo de deploy e alinhamento forçado é executado em segundos sem intervenção manual.
+O `deploy.sh` força a sincronização com o repositório remoto sem alterar arquivos locais de produção (banco, mídias e `.env`), reinicia o Gunicorn e recarrega o Caddy.
 
 ---
 

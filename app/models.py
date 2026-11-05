@@ -30,7 +30,9 @@ class RegistroUpload(models.Model):
     ano = models.IntegerField(verbose_name="Ano")
     fase = models.CharField(max_length=50, blank=True, verbose_name="Fase / Série")
     nome_arquivo = models.CharField(max_length=255, verbose_name="Nome do Arquivo")
-    caminho_relativo = models.CharField(max_length=500, verbose_name="Caminho no Acervo")
+    caminho_relativo = models.CharField(
+        max_length=500, unique=True, verbose_name="Caminho no Acervo"
+    )
     tamanho_bytes = models.BigIntegerField(default=0, verbose_name="Tamanho (bytes)")
     criado_em = models.DateTimeField(auto_now_add=True, verbose_name="Data de Upload")
 
