@@ -28,3 +28,4 @@ Para evitar que navegadores fiquem presos em versões obsoletas de arquivos est�
 
 ### 3. Coleta de Estáticos em Produção
 - Em ambiente de produção e deploy (`dev/deploy.sh`), deve ser sempre executado `python manage.py collectstatic --noinput` para sincronizar os estáticos com o diretório servido pelo Caddy (`staticfiles/`).
+
