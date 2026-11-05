@@ -345,10 +345,14 @@
         if (e.target === dialog) close();
       });
 
-      // Botão Adicionar Prova na toolbar
-      if (btnAdd) {
-        btnAdd.addEventListener('click', () => open());
-      }
+      // Botão(ões) Adicionar Prova (sidebar / toolbar)
+      const btnAdds = document.querySelectorAll('.btn-add, #btn-add, #btn-add-sidebar');
+      btnAdds.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.body.classList.remove('sidebar-open');
+          open();
+        });
+      });
 
       // Submit
       if (form) {

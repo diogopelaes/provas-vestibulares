@@ -48,7 +48,7 @@
 
     elSideList.innerHTML = '';
 
-    // Item: Todas as Provas
+    // Item: Vestibulares
     const totalGeral = catalogo.totais.edicoes;
     const itemTodos = h(
       'button',
@@ -58,7 +58,7 @@
         onclick: () => setVestibular(null),
       },
       h('span', { class: 'side-icon' }, iconNode('book')),
-      h('span', { class: 'side-name' }, 'Todas as provas'),
+      h('span', { class: 'side-name' }, 'Vestibulares'),
       h('span', { class: 'side-count' }, totalGeral)
     );
     elSideList.appendChild(itemTodos);
@@ -337,7 +337,7 @@
       elPageSub.textContent = `${plural(count, 'edição arquivada', 'edições arquivadas')} (${atual.ano_min || '—'} a ${atual.ano_max || '—'})`;
     } else {
       elPageEyebrow.textContent = 'Acervo Completo';
-      elPageTitle.textContent = 'Todas as Provas';
+      elPageTitle.textContent = 'Vestibulares';
       const tot = catalogo.totais;
       elPageSub.textContent = `${tot.edicoes} edições em ${tot.vestibulares} instituições (${tot.ano_min || '—'} a ${tot.ano_max || '—'})`;
     }
@@ -487,6 +487,7 @@
     vestibularAtivo = nome;
     faseAtiva = 'todas';
     window.location.hash = nome ? `#/${encodeURIComponent(nome)}` : '#/';
+    document.body.classList.remove('sidebar-open');
     renderSidebar();
     renderContent();
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -501,6 +502,7 @@
       const existe = catalogo.vestibulares.some((v) => v.nome === decoded);
       vestibularAtivo = existe ? decoded : null;
     }
+    document.body.classList.remove('sidebar-open');
     renderSidebar();
     renderContent();
   }

@@ -29,6 +29,39 @@
       App.library.init(catalogo);
       App.upload.init(catalogo);
 
+      // Controle do menu lateral no mobile (drawer)
+      const btnMenuToggle = document.getElementById('btn-menu-toggle');
+      const btnSidebarClose = document.getElementById('sidebar-close');
+      const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+      function openSidebar() {
+        document.body.classList.add('sidebar-open');
+        if (btnMenuToggle) btnMenuToggle.setAttribute('aria-expanded', 'true');
+      }
+
+      function closeSidebar() {
+        document.body.classList.remove('sidebar-open');
+        if (btnMenuToggle) btnMenuToggle.setAttribute('aria-expanded', 'false');
+      }
+
+      if (btnMenuToggle) {
+        btnMenuToggle.addEventListener('click', () => {
+          if (document.body.classList.contains('sidebar-open')) {
+            closeSidebar();
+          } else {
+            openSidebar();
+          }
+        });
+      }
+
+      if (btnSidebarClose) {
+        btnSidebarClose.addEventListener('click', closeSidebar);
+      }
+
+      if (sidebarBackdrop) {
+        sidebarBackdrop.addEventListener('click', closeSidebar);
+      }
+
       // Atalhos de teclado globais
       document.addEventListener('keydown', (e) => {
         const target = e.target;
@@ -38,10 +71,17 @@
           target.tagName === 'TEXTAREA' ||
           target.isContentEditable;
 
+        // Fechar menu lateral com Escape
+        if (e.key === 'Escape' && document.body.classList.contains('sidebar-open')) {
+          closeSidebar();
+          return;
+        }
+
         // Focar na busca com "/" ou "Ctrl+K"
         if ((e.key === '/' && !isEditing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
           e.preventDefault();
           if (elSearch) {
+            closeSidebar();
             elSearch.focus();
             elSearch.select();
           }
@@ -51,6 +91,7 @@
         // Abrir modal de upload com "N"
         if (e.key.toLowerCase() === 'n' && !isEditing && !e.ctrlKey && !e.metaKey && !e.altKey) {
           e.preventDefault();
+          closeSidebar();
           App.upload.open();
           return;
         }

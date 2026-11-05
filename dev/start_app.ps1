@@ -99,6 +99,13 @@ if (-not (Test-Path $venvPython)) {
 # -----------------------------------------------------------------------------
 # 2. Atualizar pip e instalar dependências no .venv
 # -----------------------------------------------------------------------------
+Write-Host "[pip] Atualizando pip no .venv..." -ForegroundColor Cyan
+try {
+    & $venvPython -m pip install --upgrade pip --quiet
+} catch {
+    Write-Host "[Aviso] Falha ao atualizar o pip: $_" -ForegroundColor Yellow
+}
+
 $reqPath = Join-Path $rootDir "requirements.txt"
 if (Test-Path $reqPath) {
     Write-Host "[pip] Garantindo dependências no .venv..." -ForegroundColor Cyan
