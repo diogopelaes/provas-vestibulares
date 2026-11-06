@@ -23,6 +23,7 @@ venv.bak/
 .env.*
 !.env.example
 primeiro_deploy.sh
+dev/sync_server.py
 
 # ==========================================
 # Django & Arquivos Gerados em Produção
