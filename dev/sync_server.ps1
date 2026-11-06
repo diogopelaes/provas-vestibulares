@@ -119,3 +119,4 @@ if ($LASTEXITCODE -ne 0) {
 Write-Host "`n==========================================================" -ForegroundColor Green
 Write-Host "  Pipeline de Sincronização e Push Concluído com Sucesso! " -ForegroundColor Green
 Write-Host "==========================================================`n" -ForegroundColor Green
+
